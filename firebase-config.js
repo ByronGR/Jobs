@@ -27,25 +27,19 @@ const app     = initializeApp(firebaseConfig);
 const db      = getFirestore(app);
 const storage = getStorage(app);
 
-// Read all published active openings
+// Get all published openings — no orderBy to avoid composite index requirement
 export async function getPublishedOpenings() {
   try {
-    // No orderBy — avoids Firestore composite index requirement
-    const q = query(
-      collection(db, 'openings'),
-      where('published', '==', true)
-    );
+    const q    = query(collection(db, 'openings'), where('published', '==', true));
     const snap = await getDocs(q);
     const results = snap.docs
       .map(d => ({ id: d.id, ...d.data() }))
-      .filter(o => {
-        // Include all statuses except archived
-        return o.status !== 'archived';
-      });
-    // Sort client-side by createdAt descending (handles both Timestamp and string)
+      .filter(o => (o.status || '').toLowerCase() !== 'archived');
+
+    // Sort client-side — handles both Firestore Timestamp and ISO string
     results.sort((a, b) => {
-      const ta = a.createdAt?.toDate?.() || new Date(a.createdAt || 0);
-      const tb = b.createdAt?.toDate?.() || new Date(b.createdAt || 0);
+      const ta = a.createdAt?.toDate?.() ?? (a.createdAt ? new Date(a.createdAt) : new Date(0));
+      const tb = b.createdAt?.toDate?.() ?? (b.createdAt ? new Date(b.createdAt) : new Date(0));
       return tb - ta;
     });
     return results;
@@ -55,10 +49,15 @@ export async function getPublishedOpenings() {
   }
 }
 
-// Read one opening by code (only if published + active)
+// Get one opening by code (any case)
 export async function getOpening(code) {
   try {
-    const snap = await getDoc(doc(db, 'openings', code));
+    // Try exact code
+    let snap = await getDoc(doc(db, 'openings', code));
+    if (!snap.exists()) {
+      // Try uppercase
+      snap = await getDoc(doc(db, 'openings', code.toUpperCase()));
+    }
     if (!snap.exists()) return null;
     const data = snap.data();
     if (!data.published) return null;
@@ -69,12 +68,11 @@ export async function getOpening(code) {
   }
 }
 
-// Submit application — upserts CAND record, writes application + audit log
+// Submit application — upserts candidate, writes application + audit log
 export async function submitApplication(applicationData) {
   const { email, openingCode } = applicationData;
   const now = serverTimestamp();
 
-  // Check for existing candidate by email
   const candSnap = await getDocs(
     query(collection(db, 'candidates'), where('email', '==', email))
   );
@@ -114,7 +112,6 @@ export async function submitApplication(applicationData) {
     });
   }
 
-  // Application record
   const appRef = doc(collection(db, 'applications'));
   await setDoc(appRef, {
     candidateId: candId, candidateCode: candCode,
@@ -124,7 +121,6 @@ export async function submitApplication(applicationData) {
     submittedAt: now, status: 'new', isMockData: false,
   });
 
-  // Audit log
   await addDoc(collection(db, 'audit_logs'), {
     action: 'candidate_applied', entity: 'candidate', entityId: candId,
     openingCode, timestamp: now, source: 'jobs.nearwork.co',
@@ -134,7 +130,6 @@ export async function submitApplication(applicationData) {
   return { candCode, appId: appRef.id };
 }
 
-// Upload CV to Firebase Storage
 export async function uploadCV(file, candCode) {
   const ext = file.name.split('.').pop();
   const storageRef = ref(storage, 'cvs/' + candCode + '/cv-' + Date.now() + '.' + ext);
@@ -142,4 +137,4 @@ export async function uploadCV(file, candCode) {
   return await getDownloadURL(snapshot.ref);
 }
 
-export { db, storage };
+export { db, storage, serverTimestamp };

@@ -157,9 +157,11 @@ function renderJobs(openings) {
     const postedDate = op.createdAt?.toDate
       ? op.createdAt.toDate().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})
       : op.createdAt ? new Date(op.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
-    const statusBadge = ['active','Active'].includes(op.status)
-      ? '<span class="badge badge-green">● Actively hiring</span>'
-      : '<span class="badge badge-amber">Applications open</span>';
+    // Candidates never see "Draft" — all published openings show as hiring/open
+    const s = (op.status || '').toLowerCase();
+    const statusBadge = s === 'on hold'
+      ? '<span class="badge badge-amber">Applications open</span>'
+      : '<span class="badge badge-green">● Actively hiring</span>';
     const card = document.createElement('a');
     card.className = 'job-card';
     card.href = '/apply/' + code;

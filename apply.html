@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apply — Nearwork</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --ink:#0F0F0F;--ink2:#2C2C2C;--muted:#6B7280;--muted2:#9CA3AF;
+  --border:#E5E7EB;--bg:#FAFAF8;--accent:#1A0A4F;--accent2:#3D1FA8;
+  --green:#0A7C5A;--green-bg:#ECFDF5;--red:#B91C1C;
+  --serif:'DM Serif Display',serif;--sans:'DM Sans',sans-serif;
+}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;}
+.nav{position:sticky;top:0;z-index:100;background:rgba(250,250,248,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 32px;height:60px;display:flex;align-items:center;justify-content:space-between;}
+.nav-logo{font-family:var(--serif);font-size:20px;color:var(--accent);text-decoration:none;}
+.nav-logo span{color:var(--accent2);}
+.nav-back{font-size:13px;font-weight:500;color:var(--muted);text-decoration:none;display:flex;align-items:center;gap:5px;transition:color .15s;}
+.nav-back:hover{color:var(--ink);}
+.page{max-width:700px;margin:0 auto;padding:48px 24px 80px;}
+/* Loading / error */
+.page-loading{text-align:center;padding:80px 24px;}
+.loader{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent2);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 14px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.not-found{text-align:center;padding:80px 24px;}
+.not-found h2{font-family:var(--serif);font-size:28px;margin-bottom:10px;}
+.not-found p{color:var(--muted);font-size:14px;margin-bottom:20px;}
+/* Intro card */
+.intro-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:20px 22px;margin-bottom:28px;display:flex;align-items:flex-start;gap:14px;}
+.ic-icon{width:42px;height:42px;border-radius:10px;background:#F5F3FF;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.ic-title{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:3px;}
+.ic-meta{font-size:12px;color:var(--muted);}
+/* Progress */
+.prog-wrap{margin-bottom:36px;}
+.prog-label-row{display:flex;align-items:center;gap:0;margin-bottom:8px;}
+.prog-step-item{display:flex;align-items:center;flex:1;}
+.pb{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;transition:all .3s;}
+.pb.done{background:var(--green);color:#fff;}
+.pb.active{background:var(--accent2);color:#fff;box-shadow:0 0 0 4px rgba(61,31,168,.15);}
+.pb.pending{background:var(--border);color:var(--muted2);}
+.pl{font-size:11px;font-weight:600;margin-left:7px;white-space:nowrap;}
+.pl.active{color:var(--accent2);}
+.pl.done{color:var(--green);}
+.pl.pending{color:var(--muted2);}
+.pline{flex:1;height:2px;background:var(--border);margin:0 6px;transition:background .3s;}
+.pline.done{background:var(--green);}
+/* Sections */
+.form-section{display:none;}
+.form-section.active{display:block;animation:fadeUp .3s ease both;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.section-note{font-size:11px;color:var(--accent2);font-weight:600;background:#F5F3FF;padding:3px 10px;border-radius:99px;display:inline-block;margin-bottom:12px;}
+.section-hdr h2{font-family:var(--serif);font-size:26px;color:var(--ink);margin-bottom:6px;letter-spacing:-.3px;}
+.section-hdr p{font-size:14px;color:var(--muted);line-height:1.65;margin-bottom:24px;}
+/* Fields */
+.field{margin-bottom:18px;}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:5px;}
+.field label .req{color:var(--red);}
+.field input,.field select,.field textarea{width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:var(--sans);color:var(--ink);background:#fff;outline:none;transition:border-color .2s,box-shadow .2s;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(61,31,168,.09);}
+.field input.err{border-color:var(--red);}
+.ferr{font-size:11px;color:var(--red);margin-top:4px;display:none;}
+.ferr.show{display:block;}
+.fhint{font-size:11px;color:var(--muted2);margin-top:5px;line-height:1.5;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:500px){.field-row{grid-template-columns:1fr;}}
+.field select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:30px;}
+.field textarea{resize:vertical;min-height:80px;line-height:1.65;}
+/* CV upload */
+.cv-drop{border:2px dashed var(--border);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:all .2s;background:#fff;}
+.cv-drop:hover,.cv-drop.drag-over{border-color:var(--accent2);background:#F5F3FF;}
+.cv-preview{display:none;align-items:center;gap:10px;padding:12px 14px;background:var(--green-bg);border:1.5px solid rgba(10,124,90,.2);border-radius:8px;margin-top:8px;}
+.cv-preview.show{display:flex;}
+.cv-pname{font-size:13px;font-weight:600;color:var(--green);flex:1;}
+.cv-rem{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 5px;}
+/* Experience card */
+.exp-card{background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:18px;margin-bottom:14px;}
+.exp-num{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:12px;}
+.curr-toggle{display:flex;align-items:center;gap:7px;margin-top:5px;cursor:pointer;user-select:none;}
+.curr-toggle input{width:15px;height:15px;accent-color:var(--accent2);cursor:pointer;}
+.curr-toggle span{font-size:13px;color:var(--ink2);}
+/* Skills */
+.skills-picker{display:flex;flex-wrap:wrap;gap:6px;}
+.skill-pill{padding:6px 13px;border-radius:99px;border:1.5px solid var(--border);font-size:12px;font-weight:500;color:var(--ink2);cursor:pointer;transition:all .15s;background:#fff;user-select:none;}
+.skill-pill:hover{border-color:var(--accent2);color:var(--accent2);}
+.skill-pill.selected{background:var(--accent2);color:#fff;border-color:var(--accent2);}
+.skills-count{font-size:11px;color:var(--muted2);margin-top:7px;}
+.skills-count span{color:var(--accent2);font-weight:700;}
+/* Questions */
+.q-item{background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:18px;margin-bottom:12px;transition:border-color .2s;}
+.q-item:focus-within{border-color:var(--accent2);}
+.q-num{font-size:10px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;}
+.q-text{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:12px;line-height:1.5;}
+.q-yn{display:flex;gap:8px;}
+.q-yn-btn{flex:1;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;font-family:var(--sans);cursor:pointer;background:#fff;color:var(--ink2);transition:all .15s;}
+.q-yn-btn.yes{background:var(--green-bg);border-color:var(--green);color:var(--green);}
+.q-yn-btn.no{background:#FEF2F2;border-color:#FCA5A5;color:var(--red);}
+/* Nav */
+.form-nav{display:flex;align-items:center;justify-content:space-between;margin-top:28px;padding-top:22px;border-top:1px solid var(--border);}
+.btn-back{padding:10px 20px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;font-family:var(--sans);cursor:pointer;background:#fff;color:var(--ink2);transition:all .15s;}
+.btn-back:hover{border-color:var(--accent2);color:var(--accent2);}
+.btn-next,.btn-submit{padding:11px 26px;background:var(--accent2);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;font-family:var(--sans);cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:7px;}
+.btn-next:hover,.btn-submit:hover{background:var(--accent);transform:translateY(-1px);}
+.step-info{font-size:12px;color:var(--muted);}
+/* Success */
+.success{display:none;text-align:center;padding:60px 24px;animation:fadeUp .5s ease both;}
+.success.show{display:block;}
+.success-icon{font-size:52px;margin-bottom:18px;}
+.success-title{font-family:var(--serif);font-size:30px;color:var(--ink);margin-bottom:10px;letter-spacing:-.3px;}
+.success-sub{font-size:14px;color:var(--muted);line-height:1.75;max-width:420px;margin:0 auto 24px;}
+.success-ref{font-size:12px;font-family:monospace;background:#F5F3FF;color:var(--accent2);padding:5px 13px;border-radius:99px;display:inline-block;margin-bottom:28px;}
+.btn-talent{padding:12px 22px;background:var(--accent2);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;font-family:var(--sans);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:7px;margin-bottom:10px;}
+.btn-browse{display:block;font-size:13px;color:var(--muted);text-decoration:none;margin-top:6px;}
+.btn-browse:hover{color:var(--ink);}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="nav-logo">Near<span>work</span></a>
+  <a href="/" class="nav-back">← All roles</a>
+</nav>
+
+<div class="page">
+
+  <!-- Loading -->
+  <div id="page-loading" class="page-loading">
+    <div class="loader"></div>
+    <div style="font-size:13px;color:var(--muted);">Loading opening...</div>
+  </div>
+
+  <!-- Not found -->
+  <div id="page-not-found" class="not-found" style="display:none;">
+    <div style="font-size:48px;margin-bottom:16px;">🔒</div>
+    <h2>Opening not found</h2>
+    <p>This opening may have closed or the link may be incorrect.</p>
+    <a href="/" style="color:var(--accent2);font-size:13px;font-weight:600;text-decoration:none;">← Browse all roles</a>
+  </div>
+
+  <!-- Application form (shown once opening loads) -->
+  <div id="app-form" style="display:none;">
+
+    <!-- Intro card -->
+    <div class="intro-card">
+      <div class="ic-icon">💼</div>
+      <div>
+        <div class="ic-title" id="ic-title">Loading...</div>
+        <div class="ic-meta" id="ic-meta"></div>
+      </div>
+    </div>
+
+    <!-- Progress -->
+    <div class="prog-wrap">
+      <div class="prog-label-row" id="prog-row">
+        <div class="prog-step-item">
+          <div class="pb active" id="pb-1">1</div>
+          <span class="pl active" id="pl-1">Profile</span>
+        </div>
+        <div class="pline" id="pline-1"></div>
+        <div class="prog-step-item">
+          <div class="pb pending" id="pb-2">2</div>
+          <span class="pl pending" id="pl-2">Experience</span>
+        </div>
+        <div class="pline" id="pline-2"></div>
+        <div class="prog-step-item">
+          <div class="pb pending" id="pb-3">3</div>
+          <span class="pl pending" id="pl-3">Opening Questions</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECTION 1: Profile ── -->
+    <div class="form-section active" id="sec-1">
+      <div class="section-hdr">
+        <div class="section-note">Section 1 of 3 · Always required</div>
+        <h2>Your profile</h2>
+        <p>Basic information that applies to every role you apply for on Nearwork.</p>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>First name <span class="req">*</span></label><input type="text" id="f-first" placeholder="María" autocomplete="given-name"><div class="ferr" id="err-first">Required</div></div>
+        <div class="field"><label>Last name <span class="req">*</span></label><input type="text" id="f-last" placeholder="García" autocomplete="family-name"><div class="ferr" id="err-last">Required</div></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Email address <span class="req">*</span></label><input type="email" id="f-email" placeholder="maria@email.com" autocomplete="email"><div class="ferr" id="err-email">Enter a valid email</div><div class="fhint">Applying again with the same email updates your profile — no duplicate accounts.</div></div>
+        <div class="field"><label>Phone <span class="req">*</span></label><input type="tel" id="f-phone" placeholder="+57 300 000 0000" autocomplete="tel"><div class="ferr" id="err-phone">Required</div></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>City <span class="req">*</span></label>
+          <select id="f-city"><option value="">Select city</option><option>Medellín</option><option>Bogotá</option><option>Cali</option><option>Barranquilla</option><option>Cartagena</option><option>Bucaramanga</option><option>Pereira</option><option>Manizales</option><option>Other</option></select>
+          <div class="ferr" id="err-city">Required</div>
+        </div>
+        <div class="field"><label>English level <span class="req">*</span></label>
+          <select id="f-english"><option value="">Select level</option><option>B1 Intermediate</option><option>B2 Upper-Intermediate</option><option>C1 Advanced</option><option>C2 / Native</option></select>
+          <div class="ferr" id="err-english">Required</div>
+        </div>
+      </div>
+      <div class="field"><label>LinkedIn profile</label><input type="url" id="f-linkedin" placeholder="https://linkedin.com/in/your-name"><div class="fhint">Optional but strongly recommended.</div></div>
+      <div class="field">
+        <label>CV / Resume <span class="req">*</span></label>
+        <div class="cv-drop" id="cv-drop" onclick="document.getElementById('cv-input').click()" ondragover="cvOver(event)" ondragleave="cvLeave()" ondrop="cvDrop(event)">
+          <div style="font-size:28px;margin-bottom:6px;">📎</div>
+          <div style="font-size:14px;font-weight:600;margin-bottom:3px;">Drop your CV here or click to upload</div>
+          <div style="font-size:12px;color:var(--muted2);">PDF, DOCX · Max 5 MB</div>
+        </div>
+        <input type="file" id="cv-input" accept=".pdf,.doc,.docx" style="display:none;" onchange="cvPicked(this)">
+        <div class="cv-preview" id="cv-preview"><span style="font-size:18px;">📄</span><span class="cv-pname" id="cv-pname"></span><button class="cv-rem" onclick="cvRemove()">✕</button></div>
+        <div class="ferr" id="err-cv">Please upload your CV</div>
+      </div>
+      <div class="form-nav"><div class="step-info">Step 1 of 3</div><button class="btn-next" onclick="goStep(2)">Continue →</button></div>
+    </div>
+
+    <!-- ── SECTION 2: Experience ── -->
+    <div class="form-section" id="sec-2">
+      <div class="section-hdr">
+        <div class="section-note">Section 2 of 3 · Always required</div>
+        <h2>Your experience</h2>
+        <p>Your two most recent or relevant roles, plus your top 5 skills.</p>
+      </div>
+      <div class="exp-card">
+        <div class="exp-num">Position 1 — most recent</div>
+        <div class="field"><label>Company name <span class="req">*</span></label><input type="text" id="e1-co" placeholder="e.g. Acme SaaS Inc."><div class="ferr" id="err-e1-co">Required</div></div>
+        <div class="field"><label>Your title <span class="req">*</span></label><input type="text" id="e1-title" placeholder="e.g. Customer Success Manager"><div class="ferr" id="err-e1-title">Required</div></div>
+        <div class="field-row">
+          <div class="field"><label>Start date <span class="req">*</span></label><input type="month" id="e1-from"><div class="ferr" id="err-e1-from">Required</div></div>
+          <div class="field"><label>End date</label><input type="month" id="e1-to" placeholder="Leave blank if current"><label class="curr-toggle" style="margin-top:7px;"><input type="checkbox" id="e1-curr" onchange="toggleCurr('e1')"><span>I currently work here</span></label></div>
+        </div>
+        <div class="field"><label>Verification contact</label><input type="email" id="e1-contact" placeholder="hr@company.com"><div class="fhint">Optional — helps us verify your tenure quickly.</div></div>
+      </div>
+      <div class="exp-card">
+        <div class="exp-num">Position 2 — previous</div>
+        <div class="field"><label>Company name</label><input type="text" id="e2-co" placeholder="e.g. Startup Co."></div>
+        <div class="field"><label>Your title</label><input type="text" id="e2-title" placeholder="e.g. Account Manager"></div>
+        <div class="field-row">
+          <div class="field"><label>Start date</label><input type="month" id="e2-from"></div>
+          <div class="field"><label>End date</label><input type="month" id="e2-to"><label class="curr-toggle" style="margin-top:7px;"><input type="checkbox" id="e2-curr" onchange="toggleCurr('e2')"><span>Currently work here</span></label></div>
+        </div>
+        <div class="field"><label>Verification contact</label><input type="email" id="e2-contact" placeholder="hr@company.com"></div>
+      </div>
+      <div class="field">
+        <label>Top 5 skills <span class="req">*</span></label>
+        <div class="fhint" style="margin-bottom:10px;">Select exactly 5 skills that best describe your strengths.</div>
+        <div class="skills-picker" id="skills-picker"></div>
+        <div class="skills-count">Selected: <span id="skills-count">0</span> / 5</div>
+        <div class="ferr" id="err-skills">Please select exactly 5 skills</div>
+      </div>
+      <div class="form-nav"><button class="btn-back" onclick="goStep(1)">← Back</button><div style="display:flex;align-items:center;gap:10px;"><div class="step-info">Step 2 of 3</div><button class="btn-next" onclick="goStep(3)">Continue →</button></div></div>
+    </div>
+
+    <!-- ── SECTION 3: Opening Questions (dynamic) ── -->
+    <div class="form-section" id="sec-3">
+      <div class="section-hdr">
+        <div class="section-note">Section 3 of 3 · Specific to this role</div>
+        <h2>Opening questions</h2>
+        <p>These questions are specific to this role. Take your time — thoughtful answers make a real difference.</p>
+      </div>
+      <div id="questions-container"><!-- questions rendered by JS --></div>
+      <div class="form-nav"><button class="btn-back" onclick="goStep(2)">← Back</button><div style="display:flex;align-items:center;gap:10px;"><div class="step-info">Step 3 of 3</div><button class="btn-submit" onclick="submitApp()">Submit application →</button></div></div>
+    </div>
+
+  </div><!-- /app-form -->
+
+  <!-- Success screen -->
+  <div class="success" id="success-screen">
+    <div class="success-icon">🎉</div>
+    <div class="success-title">Application submitted!</div>
+    <p class="success-sub">Thank you — we've received your application and will review it carefully. Expect an email from us within <strong>3–5 business days</strong>.</p>
+    <div class="success-ref" id="success-ref">Reference: —</div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+      <a href="https://talent.nearwork.co/dashboard" class="btn-talent">Go to your dashboard →</a>
+      <a href="/" class="btn-browse">← Browse more roles</a>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<script type="module">
+import { getOpening, submitApplication, uploadCV } from './firebase-config.js';
+
+// ── Extract opening code from URL: /apply/open-csm-4x8b ──────────────────
+const pathParts = window.location.pathname.split('/').filter(Boolean);
+const codeRaw   = pathParts[pathParts.length - 1] || '';
+const CODE      = codeRaw.toUpperCase();
+
+// ── Skills list (from Firestore in production — hardcoded default for now) ─
+const SKILLS = [
+  'Customer Success Management','Account Management','CRM (Salesforce)','CRM (HubSpot)',
+  'Customer Retention','Onboarding','Churn Prevention','Renewal Management',
+  'QBR / Business Reviews','NPS Management','Pipeline Management','Lead Generation',
+  'Data Analysis','Excel / Google Sheets','Email Communication','Verbal Communication',
+  'Written Communication','Problem Solving','Time Management','SaaS','B2B Sales',
+  'Project Coordination','Cross-functional Collaboration','US Business Culture',
+];
+
+let opening       = null;
+let selectedSkills= new Set();
+let cvFile        = null;
+let ynAnswers     = {};
+let currentStep   = 1;
+
+// ── Load opening ──────────────────────────────────────────────────────────
+async function init() {
+  if (!CODE || CODE === 'APPLY') {
+    showNotFound(); return;
+  }
+  try {
+    opening = await getOpening(CODE);
+  } catch(e) {
+    console.error(e);
+  }
+  if (!opening) { showNotFound(); return; }
+
+  // Populate intro card
+  const cur = opening.currency || 'USD';
+  const sym = cur === 'COP' ? 'COP ' : '$';
+  const sal = (opening.salaryMin && opening.salaryMax)
+    ? sym + parseInt(opening.salaryMin).toLocaleString() + '–' + sym + parseInt(opening.salaryMax).toLocaleString() + ' ' + cur + '/mo'
+    : '';
+  document.getElementById('ic-title').textContent = opening.title || 'Opening';
+  document.getElementById('ic-meta').innerHTML = [
+    opening.wfh || 'Remote',
+    'Colombia-wide',
+    sal,
+    '<strong style="color:var(--accent2);">' + CODE + '</strong>'
+  ].filter(Boolean).join(' · ');
+
+  // Update page title
+  document.title = 'Apply — ' + (opening.title || 'Opening') + ' · Nearwork';
+
+  // Render back link to opening listing
+  document.querySelector('.nav-back').href = '/';
+
+  // Render dynamic questions (Section 3)
+  renderQuestions(opening.questionnaire || []);
+
+  // Render skills
+  renderSkills();
+
+  document.getElementById('page-loading').style.display  = 'none';
+  document.getElementById('app-form').style.display      = 'block';
+}
+
+function showNotFound() {
+  document.getElementById('page-loading').style.display   = 'none';
+  document.getElementById('page-not-found').style.display = 'block';
+}
+
+// ── Render dynamic questions ──────────────────────────────────────────────
+function renderQuestions(questions) {
+  const container = document.getElementById('questions-container');
+  container.innerHTML = '';
+
+  if (!questions.length) {
+    container.innerHTML = '<div style="padding:20px;text-align:center;font-size:13px;color:var(--muted);">No additional questions for this role.</div>';
+    return;
+  }
+
+  questions.forEach((q, idx) => {
+    const qid = q.id || ('q-' + idx);
+    const div = document.createElement('div');
+    div.className = 'q-item';
+    div.dataset.qid = qid;
+    div.dataset.type = q.type || 'short';
+
+    let answerHtml = '';
+    if (q.type === 'yes_no') {
+      answerHtml = `<div class="q-yn" id="qyn-${qid}">
+        <button type="button" class="q-yn-btn" onclick="pickYN('${qid}',this,'yes')">✓ Yes</button>
+        <button type="button" class="q-yn-btn" onclick="pickYN('${qid}',this,'no')">✕ No</button>
+      </div>
+      <div id="qyn-detail-${qid}" style="display:none;margin-top:10px;">
+        <textarea id="qta-${qid}" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;min-height:64px;resize:vertical;line-height:1.65;" placeholder="Please explain..." onfocus="this.style.borderColor='var(--accent2)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+      </div>`;
+    } else {
+      // short or long
+      const rows = q.type === 'long' ? 5 : 3;
+      answerHtml = `<textarea id="qta-${qid}" rows="${rows}" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;min-height:${q.type==='long'?'110':'72'}px;resize:vertical;line-height:1.65;" placeholder="Your answer..." onfocus="this.style.borderColor='var(--accent2)'" onblur="this.style.borderColor='var(--border)'"></textarea>`;
+    }
+
+    div.innerHTML = `
+      <div class="q-num">Question ${idx+1} of ${questions.length}</div>
+      <div class="q-text">${q.text}</div>
+      ${answerHtml}
+      <div class="ferr" id="err-q-${qid}">Please answer this question</div>`;
+    container.appendChild(div);
+  });
+}
+
+// ── Yes/No handler ────────────────────────────────────────────────────────
+window.pickYN = function(qid, btn, val) {
+  const group = document.getElementById('qyn-' + qid);
+  group.querySelectorAll('.q-yn-btn').forEach(b => b.className = 'q-yn-btn');
+  btn.className = 'q-yn-btn ' + val;
+  ynAnswers[qid] = val;
+  const detail = document.getElementById('qyn-detail-' + qid);
+  if (detail) detail.style.display = val === 'yes' ? 'block' : 'none';
+};
+
+// ── Skills ────────────────────────────────────────────────────────────────
+function renderSkills() {
+  const container = document.getElementById('skills-picker');
+  container.innerHTML = '';
+  SKILLS.forEach(skill => {
+    const pill = document.createElement('button');
+    pill.type = 'button';
+    pill.className = 'skill-pill' + (selectedSkills.has(skill) ? ' selected' : '');
+    pill.textContent = skill;
+    pill.onclick = () => {
+      if (selectedSkills.has(skill)) {
+        selectedSkills.delete(skill); pill.classList.remove('selected');
+      } else {
+        if (selectedSkills.size >= 5) { pill.style.transform='scale(.95)'; setTimeout(()=>pill.style.transform='',150); return; }
+        selectedSkills.add(skill); pill.classList.add('selected');
+      }
+      document.getElementById('skills-count').textContent = selectedSkills.size;
+    };
+    container.appendChild(pill);
+  });
+}
+
+// ── CV upload ─────────────────────────────────────────────────────────────
+window.cvOver  = e => { e.preventDefault(); document.getElementById('cv-drop').classList.add('drag-over'); };
+window.cvLeave = ()=> document.getElementById('cv-drop').classList.remove('drag-over');
+window.cvDrop  = e => { e.preventDefault(); cvLeave(); if (e.dataTransfer.files[0]) handleCV(e.dataTransfer.files[0]); };
+window.cvPicked= input => { if (input.files[0]) handleCV(input.files[0]); };
+function handleCV(file) {
+  const ok = ['application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(file.type);
+  if (!ok) { alert('Please upload a PDF or Word document.'); return; }
+  if (file.size > 5*1024*1024) { alert('File too large — max 5 MB.'); return; }
+  cvFile = file;
+  document.getElementById('cv-pname').textContent = file.name;
+  document.getElementById('cv-preview').classList.add('show');
+}
+window.cvRemove = () => { cvFile = null; document.getElementById('cv-input').value=''; document.getElementById('cv-preview').classList.remove('show'); };
+
+// ── Experience ────────────────────────────────────────────────────────────
+window.toggleCurr = prefix => {
+  const checked = document.getElementById(prefix+'-curr').checked;
+  const toEl = document.getElementById(prefix+'-to');
+  toEl.disabled = checked; toEl.style.opacity = checked ? '.4' : '1';
+  if (checked) toEl.value = '';
+};
+
+// ── Validation ────────────────────────────────────────────────────────────
+function showErr(id){ const el=document.getElementById(id); if(el) el.classList.add('show'); }
+function clearErr(id){ const el=document.getElementById(id); if(el) el.classList.remove('show'); }
+
+function validateStep(step) {
+  let ok = true;
+  if (step === 1) {
+    const first = document.getElementById('f-first').value.trim();
+    const last  = document.getElementById('f-last').value.trim();
+    const email = document.getElementById('f-email').value.trim();
+    const phone = document.getElementById('f-phone').value.trim();
+    const city  = document.getElementById('f-city').value;
+    const eng   = document.getElementById('f-english').value;
+    if (!first) { showErr('err-first'); ok=false; } else clearErr('err-first');
+    if (!last)  { showErr('err-last');  ok=false; } else clearErr('err-last');
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showErr('err-email'); ok=false; } else clearErr('err-email');
+    if (!phone) { showErr('err-phone'); ok=false; } else clearErr('err-phone');
+    if (!city)  { showErr('err-city');  ok=false; } else clearErr('err-city');
+    if (!eng)   { showErr('err-english'); ok=false; } else clearErr('err-english');
+    if (!cvFile){ showErr('err-cv'); ok=false; } else clearErr('err-cv');
+  }
+  if (step === 2) {
+    if (!document.getElementById('e1-co').value.trim())    { showErr('err-e1-co'); ok=false; } else clearErr('err-e1-co');
+    if (!document.getElementById('e1-title').value.trim()) { showErr('err-e1-title'); ok=false; } else clearErr('err-e1-title');
+    if (!document.getElementById('e1-from').value)         { showErr('err-e1-from'); ok=false; } else clearErr('err-e1-from');
+    if (selectedSkills.size !== 5) { showErr('err-skills'); ok=false; } else clearErr('err-skills');
+  }
+  if (step === 3) {
+    const qs = document.querySelectorAll('#questions-container .q-item');
+    qs.forEach(qItem => {
+      const qid  = qItem.dataset.qid;
+      const type = qItem.dataset.type;
+      const errEl = document.getElementById('err-q-' + qid);
+      if (type === 'yes_no') {
+        if (!ynAnswers[qid]) { if(errEl) errEl.classList.add('show'); ok=false; }
+        else { if(errEl) errEl.classList.remove('show'); }
+      } else {
+        const ta = document.getElementById('qta-' + qid);
+        if (!ta?.value.trim()) { if(errEl) errEl.classList.add('show'); ok=false; }
+        else { if(errEl) errEl.classList.remove('show'); }
+      }
+    });
+  }
+  return ok;
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────
+window.goStep = function(to) {
+  if (to > currentStep && !validateStep(currentStep)) {
+    document.querySelector('.ferr.show')?.scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
+  document.getElementById('sec-' + currentStep).classList.remove('active');
+  currentStep = to;
+  document.getElementById('sec-' + to).classList.add('active');
+  updateProg(to);
+  window.scrollTo({top:0,behavior:'smooth'});
+};
+
+function updateProg(step) {
+  for (let i=1;i<=3;i++){
+    const b=document.getElementById('pb-'+i), l=document.getElementById('pl-'+i);
+    if(i<step)       {b.className='pb done'; b.textContent='✓'; l.className='pl done';}
+    else if(i===step){b.className='pb active'; b.textContent=i; l.className='pl active';}
+    else             {b.className='pb pending'; b.textContent=i; l.className='pl pending';}
+  }
+  for(let i=1;i<=2;i++){
+    const ln=document.getElementById('pline-'+i);
+    if(i<step) ln.classList.add('done'); else ln.classList.remove('done');
+  }
+}
+
+// ── Submit ─────────────────────────────────────────────────────────────────
+window.submitApp = async function() {
+  if (!validateStep(3)) {
+    document.querySelector('.ferr.show')?.scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
+
+  const submitBtn = document.querySelector('.btn-submit');
+  submitBtn.textContent = 'Submitting...';
+  submitBtn.disabled = true;
+
+  // Collect questions answers
+  const questionsAnswers = [];
+  document.querySelectorAll('#questions-container .q-item').forEach(qItem => {
+    const qid  = qItem.dataset.qid;
+    const type = qItem.dataset.type;
+    const answer = type === 'yes_no'
+      ? { yn: ynAnswers[qid], detail: document.getElementById('qta-'+qid)?.value || '' }
+      : document.getElementById('qta-'+qid)?.value || '';
+    questionsAnswers.push({ id:qid, answer });
+  });
+
+  const email = document.getElementById('f-email').value.trim();
+  let cvUrl = null;
+
+  // Upload CV first
+  try {
+    // We don't have candCode yet — use a temp key
+    const tempCode = 'TEMP-' + Date.now();
+    cvUrl = await uploadCV(cvFile, tempCode);
+  } catch(e) {
+    console.error('CV upload failed:', e);
+    // Continue without CV URL — we'll note it
+  }
+
+  const appData = {
+    openingCode: CODE,
+    email,
+    firstName:  document.getElementById('f-first').value.trim(),
+    lastName:   document.getElementById('f-last').value.trim(),
+    phone:      document.getElementById('f-phone').value.trim(),
+    city:       document.getElementById('f-city').value,
+    english:    document.getElementById('f-english').value,
+    linkedin:   document.getElementById('f-linkedin').value.trim(),
+    cvUrl,
+    experience: [
+      { company: document.getElementById('e1-co').value.trim(), title: document.getElementById('e1-title').value.trim(), from: document.getElementById('e1-from').value, to: document.getElementById('e1-curr').checked ? 'present' : document.getElementById('e1-to').value, contact: document.getElementById('e1-contact').value.trim() },
+      { company: document.getElementById('e2-co').value.trim(), title: document.getElementById('e2-title').value.trim(), from: document.getElementById('e2-from').value, to: document.getElementById('e2-curr').checked ? 'present' : document.getElementById('e2-to').value, contact: document.getElementById('e2-contact').value.trim() },
+    ],
+    skills: [...selectedSkills],
+    questions: questionsAnswers,
+  };
+
+  try {
+    const { candCode } = await submitApplication(appData);
+    document.getElementById('success-ref').textContent = 'Reference: ' + CODE + ' · ' + candCode;
+    // Hide form, show success
+    document.getElementById('app-form').style.display = 'none';
+    document.getElementById('success-screen').classList.add('show');
+    window.scrollTo({top:0,behavior:'smooth'});
+  } catch(e) {
+    console.error('Submit error:', e);
+    submitBtn.textContent = 'Submit application →';
+    submitBtn.disabled = false;
+    alert('Something went wrong. Please try again or contact hello@nearwork.co');
+  }
+};
+
+// Start
+init();
+</script>
+</body>
+</html>

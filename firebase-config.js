@@ -6,7 +6,7 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import {
   getFirestore,
-  collection, query, where, orderBy,
+  collection, query, where,
   getDocs, getDoc, doc, setDoc, addDoc,
   serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -30,15 +30,25 @@ const storage = getStorage(app);
 // Read all published active openings
 export async function getPublishedOpenings() {
   try {
+    // No orderBy — avoids Firestore composite index requirement
     const q = query(
       collection(db, 'openings'),
-      where('published', '==', true),
-      orderBy('createdAt', 'desc')
+      where('published', '==', true)
     );
     const snap = await getDocs(q);
-    return snap.docs
+    const results = snap.docs
       .map(d => ({ id: d.id, ...d.data() }))
-      .filter(o => ['active','Active','on hold','On hold'].includes(o.status));
+      .filter(o => {
+        // Include all statuses except archived
+        return o.status !== 'archived';
+      });
+    // Sort client-side by createdAt descending (handles both Timestamp and string)
+    results.sort((a, b) => {
+      const ta = a.createdAt?.toDate?.() || new Date(a.createdAt || 0);
+      const tb = b.createdAt?.toDate?.() || new Date(b.createdAt || 0);
+      return tb - ta;
+    });
+    return results;
   } catch(e) {
     console.error('getPublishedOpenings:', e);
     return [];

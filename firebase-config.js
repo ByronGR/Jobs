@@ -57,23 +57,93 @@ export async function getOpening(code) {
   }
 }
 
+export async function getCandidateByEmail(email) {
+  try {
+    const normalized = email.trim().toLowerCase();
+    let snap = await getDocs(query(collection(db,'candidates'), where('email','==',normalized)));
+    if (snap.empty && normalized !== email.trim()) {
+      snap = await getDocs(query(collection(db,'candidates'), where('email','==',email.trim())));
+    }
+    if (snap.empty) return null;
+    const docSnap = snap.docs[0];
+    return { id: docSnap.id, ...docSnap.data() };
+  } catch(e) {
+    console.error('getCandidateByEmail error:', e.message);
+    return null;
+  }
+}
+
 export async function submitApplication(applicationData) {
-  const { email, openingCode } = applicationData;
+  const { openingCode } = applicationData;
+  const rawEmail = applicationData.email.trim();
+  const email = rawEmail.toLowerCase();
   const now = serverTimestamp();
-  const candSnap = await getDocs(query(collection(db,'candidates'), where('email','==',email)));
+  let candSnap = await getDocs(query(collection(db,'candidates'), where('email','==',email)));
+  if (candSnap.empty && rawEmail !== email) {
+    candSnap = await getDocs(query(collection(db,'candidates'), where('email','==',rawEmail)));
+  }
   let candId, candCode;
+  const candidateProfile = {
+    email,
+    firstName: applicationData.firstName,
+    lastName: applicationData.lastName,
+    phone: applicationData.phone,
+    city: applicationData.city,
+    english: applicationData.english,
+    linkedin: applicationData.linkedin || '',
+    cvUrl: applicationData.cvUrl || null,
+    experience: applicationData.experience || [],
+    skills: applicationData.skills || [],
+    updatedAt: now,
+    isMockData: false,
+    source: 'jobs.nearwork.co',
+    lastAppliedOpeningCode: openingCode,
+    lastAppliedAt: now
+  };
   if (!candSnap.empty) {
     const ex = candSnap.docs[0];
-    candId = ex.id; candCode = ex.data().code;
-    await setDoc(doc(db,'candidates',candId), {firstName:applicationData.firstName,lastName:applicationData.lastName,phone:applicationData.phone,city:applicationData.city,english:applicationData.english,linkedin:applicationData.linkedin||'',updatedAt:now,isMockData:false},{merge:true});
+    candId = ex.id; candCode = ex.data().code || ex.id;
+    await setDoc(doc(db,'candidates',candId), candidateProfile, {merge:true});
   } else {
     const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     candCode='CAND-'+Array.from({length:6},()=>chars[Math.floor(Math.random()*chars.length)]).join('');
     candId=candCode;
-    await setDoc(doc(db,'candidates',candId),{code:candCode,email,firstName:applicationData.firstName,lastName:applicationData.lastName,phone:applicationData.phone,city:applicationData.city,english:applicationData.english,linkedin:applicationData.linkedin||'',status:'applied',isMockData:false,createdAt:now,updatedAt:now,source:'jobs.nearwork.co'});
+    await setDoc(doc(db,'candidates',candId),{code:candCode,status:'applied',createdAt:now,...candidateProfile});
   }
-  const appRef=doc(collection(db,'applications'));
-  await setDoc(appRef,{candidateId:candId,candidateCode:candCode,openingCode,experience:applicationData.experience,skills:applicationData.skills,questions:applicationData.questions,cvUrl:applicationData.cvUrl||null,submittedAt:now,status:'new',isMockData:false});
+  const safeOpeningCode = String(openingCode).replace(/[^\w-]/g,'_');
+  const appRef=doc(db,'applications',candId+'_'+safeOpeningCode);
+  await setDoc(appRef,{
+    candidateId:candId,
+    candidateCode:candCode,
+    candidateName:[applicationData.firstName,applicationData.lastName].filter(Boolean).join(' '),
+    candidateEmail:email,
+    openingCode,
+    openingTitle:applicationData.openingTitle||'',
+    experience:applicationData.experience,
+    skills:applicationData.skills,
+    questions:applicationData.questions,
+    cvUrl:applicationData.cvUrl||null,
+    submittedAt:now,
+    updatedAt:now,
+    status:'new',
+    pipelineStage:'applied',
+    isMockData:false,
+    source:'jobs.nearwork.co'
+  }, {merge:true});
+  const emailOpeningTitle = String(applicationData.openingTitle || openingCode).replace(/[&<>"']/g, ch => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[ch]));
+  await setDoc(doc(db,'mail',appRef.id), {
+    to: email,
+    message: {
+      subject: 'Thank you for applying to Nearwork',
+      text: `Thank you for applying to ${applicationData.openingTitle || openingCode}. We received your application and will review it carefully.`,
+      html: `<p>Thank you for applying to <strong>${emailOpeningTitle}</strong>.</p><p>We received your application and will review it carefully.</p>`
+    },
+    createdAt: now,
+    source: 'jobs.nearwork.co',
+    applicationId: appRef.id
+  }, {merge:true});
   await addDoc(collection(db,'audit_logs'),{action:'candidate_applied',entity:'candidate',entityId:candId,openingCode,timestamp:now,source:'jobs.nearwork.co',detail:(candSnap.empty?'New candidate':'Updated')+' — applied to '+openingCode});
   return {candCode,appId:appRef.id};
 }

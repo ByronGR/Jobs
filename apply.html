@@ -359,7 +359,7 @@ body{font-family:'Poppins',sans-serif;background:var(--bg);color:var(--ink);-web
 </div><!-- /page -->
 
 <script type="module">
-import { getOpening, getCandidateByEmail, signInCandidate, createCandidateAuth, submitApplication, uploadCV, getCandidateSession, saveCandidateSession } from './firebase-config.js';
+import { getOpening, getCandidateByEmail, signInCandidate, createCandidateAuth, uploadCV, getCandidateSession, saveCandidateSession } from './firebase-config.js';
 
 // ── Extract opening code from URL: /apply/open-csm-4x8b ──────────────────
 const pathParts = window.location.pathname.split('/').filter(Boolean);
@@ -945,26 +945,23 @@ function updateProg(step) {
 }
 
 // ── Submit ─────────────────────────────────────────────────────────────────
-async function sendConfirmationEmail(appData, candCode) {
+async function submitApplicationToServer(appData) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 25000);
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 8000);
-    const res = await fetch('/api/send-confirmation', {
+    const res = await fetch('/api/submit-application', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        to: appData.email,
-        candidateName: [appData.firstName, appData.lastName].filter(Boolean).join(' '),
-        openingTitle: appData.openingTitle || appData.openingCode,
-        openingCode: appData.openingCode,
-        candidateCode: candCode
-      }),
+      body: JSON.stringify(appData),
       signal: controller.signal
     });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) {
+      throw new Error(data.message || data.error || 'Application submit failed');
+    }
+    return data;
+  } finally {
     clearTimeout(timer);
-    if (!res.ok) console.warn('confirmation email skipped:', await res.text());
-  } catch(e) {
-    console.warn('confirmation email skipped:', e.message);
   }
 }
 
@@ -1031,10 +1028,9 @@ window.submitApp = async function() {
   };
 
   try {
-    const { candCode } = await submitApplication(appData);
-    await sendConfirmationEmail(appData, candCode);
+    const { candCode, candId } = await submitApplicationToServer(appData);
     saveCandidateSession({
-      id: activeCandidate?.id || activeCandidate?.candidateId || candCode,
+      id: candId || activeCandidate?.id || activeCandidate?.candidateId || candCode,
       code: candCode,
       email,
       firstName: appData.firstName,
@@ -1049,7 +1045,7 @@ window.submitApp = async function() {
     console.error('Submit error:', e);
     submitBtn.textContent = 'Submit application →';
     submitBtn.disabled = false;
-    submitError.textContent = 'Something went wrong while submitting. Please try again or contact support@nearwork.co.';
+    submitError.textContent = 'Something went wrong while submitting. Please try again or contact support@nearwork.co. Details: ' + (e.message || 'Unknown error');
     submitError.classList.add('show');
     submitError.scrollIntoView({behavior:'smooth',block:'center'});
   }

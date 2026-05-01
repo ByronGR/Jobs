@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Open Roles — Nearwork</title>
+<meta name="description" content="Browse open roles at US SaaS companies — fully remote from Colombia. USD salary. Apply through Nearwork.">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --ink:#182033;--ink2:#2D3748;--muted:#667085;--muted2:#98A2B3;
+  --border:#E7E2D7;--bg:#FFF8EC;--accent:#3D1FA8;--accent2:#6C3CF0;
+  --coral:#FF6B4A;--sun:#FFD166;--aqua:#13B7A6;
+  --green:#087A5B;--green-bg:#E7FFF4;--amber:#B45309;--amber-bg:#FFF3D6;
+  --sans:'Poppins',sans-serif;
+}
+html{scroll-behavior:smooth;}
+body{font-family:'Poppins',sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;}
+.nav{position:sticky;top:0;z-index:100;background:rgba(255,248,236,.95);backdrop-filter:blur(12px);border-bottom:1px solid rgba(231,226,215,.8);padding:0 32px;height:64px;display:flex;align-items:center;justify-content:space-between;}
+.nav-logo{font-family:'Poppins',sans-serif;font-size:20px;font-weight:900;color:var(--accent);text-decoration:none;letter-spacing:-1px;}
+.nav-logo span{color:var(--accent2);}
+.nav-actions{display:flex;align-items:center;gap:10px;}
+.account-chip{display:none;align-items:center;gap:8px;padding:7px 12px;background:#fff;border:1.5px solid var(--border);border-radius:99px;font-size:12px;font-weight:700;color:var(--ink2);}
+.account-dot{width:8px;height:8px;border-radius:50%;background:var(--aqua);}
+.nav-login{padding:8px 18px;border:1.5px solid var(--accent2);border-radius:99px;font-size:13px;font-weight:700;color:var(--accent2);background:#fff;text-decoration:none;transition:all .15s;font-family:'Poppins',sans-serif;cursor:pointer;}
+.nav-login:hover{background:var(--accent2);color:#fff;}
+.hero{background:linear-gradient(135deg,#fff0be 0%,#ff795f 48%,#6944ea 100%);padding:76px 32px 68px;text-align:center;position:relative;overflow:hidden;}
+.hero::after{content:"";position:absolute;inset:auto 0 0 0;height:8px;background:linear-gradient(90deg,var(--aqua),var(--sun),var(--coral),var(--accent2));}
+.hero-eyebrow{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(24,32,51,.65);margin-bottom:16px;}
+.hero-title{font-family:'Poppins',sans-serif;font-size:clamp(34px,4.7vw,56px);font-weight:900;color:#fff;line-height:1.05;letter-spacing:-1.5px;margin-bottom:16px;text-shadow:0 2px 20px rgba(61,31,168,.24);}
+.hero-title em{font-style:normal;color:#fff4b8;}
+.hero-sub{font-size:16px;color:rgba(255,255,255,.9);max-width:620px;margin:0 auto 30px;line-height:1.65;font-weight:500;}
+.hero-cta-row{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:34px;}
+.hero-cta{display:inline-flex;align-items:center;gap:7px;padding:11px 18px;border-radius:99px;background:#fff;color:var(--accent);font-size:13px;font-weight:800;text-decoration:none;border:1px solid rgba(255,255,255,.7);box-shadow:0 10px 30px rgba(61,31,168,.15);}
+.hero-cta.alt{background:rgba(255,255,255,.18);color:#fff;border-color:rgba(255,255,255,.45);box-shadow:none;}
+.hero-stats{display:flex;align-items:center;justify-content:center;gap:32px;flex-wrap:wrap;}
+.hs-num{font-family:'Poppins',sans-serif;font-size:32px;font-weight:800;color:#fff;line-height:1;margin-bottom:4px;letter-spacing:-1px;}
+.hs-label{font-size:11px;color:rgba(255,255,255,.78);text-transform:uppercase;letter-spacing:.08em;font-weight:700;}
+.filters-bar{background:#fff;border-bottom:1px solid var(--border);padding:16px 32px;}
+.filters-inner{max-width:900px;margin:0 auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.search-wrap{flex:1;min-width:200px;position:relative;}
+.search-wrap input{width:100%;padding:9px 14px 9px 38px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:'Poppins',sans-serif;outline:none;transition:border-color .2s;}
+.search-wrap input:focus{border-color:var(--accent2);}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted2);pointer-events:none;}
+.filter-sel{padding:9px 32px 9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:'Poppins',sans-serif;color:var(--ink2);background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center;appearance:none;outline:none;cursor:pointer;transition:border-color .2s;}
+.filter-sel:focus{border-color:var(--accent2);}
+.results-count{font-size:12px;color:var(--muted);white-space:nowrap;margin-left:auto;}
+.main{max-width:980px;margin:0 auto;padding:36px 32px;}
+.trust-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+.trust-item{background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:14px 16px;font-size:12px;color:var(--muted);line-height:1.5;}
+.trust-item strong{display:block;color:var(--ink);font-size:13px;margin-bottom:2px;}
+@media(max-width:760px){.trust-row{grid-template-columns:1fr;}.nav{padding:0 18px}.account-chip{display:none!important;}}
+.jobs-grid{display:flex;flex-direction:column;gap:12px;}
+.job-card{background:#fff;border:1.5px solid var(--border);border-radius:14px;padding:24px;cursor:pointer;transition:all .2s;text-decoration:none;display:block;color:inherit;box-shadow:0 8px 30px rgba(98,67,36,.04);}
+.job-card:hover{border-color:var(--coral);box-shadow:0 12px 34px rgba(255,107,74,.16);transform:translateY(-2px);}
+.jc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:12px;flex-wrap:wrap;}
+.jc-title{font-family:'Poppins',sans-serif;font-size:18px;font-weight:700;color:var(--ink);letter-spacing:-.3px;margin-bottom:4px;}
+.jc-meta{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.jc-dot{width:3px;height:3px;border-radius:50%;background:var(--muted2);}
+.jc-badges{display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0;}
+.badge{font-size:11px;font-weight:600;padding:4px 11px;border-radius:99px;}
+.badge-green{background:var(--green-bg);color:var(--green);}
+.badge-accent{background:#F5F3FF;color:var(--accent2);}
+.badge-amber{background:var(--amber-bg);color:var(--amber);}
+.jc-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
+.chip{font-size:11px;font-weight:500;padding:3px 10px;border-radius:99px;background:#F9FAFB;color:var(--muted);border:1px solid var(--border);}
+.jc-footer{display:flex;align-items:center;justify-content:space-between;padding-top:14px;border-top:1px solid var(--border);flex-wrap:wrap;gap:10px;}
+.jc-salary{font-size:14px;font-weight:700;color:var(--green);}
+.jc-cta{font-size:13px;font-weight:700;color:var(--accent2);display:flex;align-items:center;gap:5px;}
+.loading{text-align:center;padding:80px 32px;}
+.loader{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent2);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 16px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.empty-state{text-align:center;padding:80px 32px;}
+.empty-icon{font-size:48px;margin-bottom:16px;}
+.empty-title{font-family:'Poppins',sans-serif;font-size:24px;color:var(--ink);margin-bottom:8px;}
+.empty-sub{font-size:14px;color:var(--muted);line-height:1.65;}
+.error-banner{background:#FEF2F2;border:1px solid #FCA5A5;border-radius:10px;padding:16px;font-size:13px;color:#B91C1C;margin-bottom:24px;display:none;}
+.error-banner.show{display:block;}
+.login-modal{position:fixed;inset:0;background:rgba(24,32,51,.42);z-index:300;display:none;align-items:center;justify-content:center;padding:20px;}
+.login-modal.show{display:flex;}
+.login-box{width:min(440px,100%);background:#fff;border-radius:14px;border:1px solid var(--border);padding:24px;box-shadow:0 24px 80px rgba(24,32,51,.22);}
+.login-title{font-size:22px;font-weight:900;color:var(--ink);margin-bottom:6px;}
+.login-sub{font-size:13px;color:var(--muted);line-height:1.65;margin-bottom:16px;}
+.login-row{display:flex;gap:8px;}
+.login-row input{flex:1;padding:11px 13px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:var(--sans);outline:none;}
+.login-row input:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(108,60,240,.1);}
+.login-btn{padding:11px 16px;background:var(--accent2);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:800;font-family:var(--sans);cursor:pointer;}
+.google-btn{width:100%;margin-top:10px;padding:11px 16px;background:#fff;color:var(--ink);border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:800;font-family:var(--sans);cursor:pointer;}
+.login-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;}
+.login-msg{font-size:12px;color:var(--muted);line-height:1.5;}
+.login-close{background:none;border:none;color:var(--muted);font-weight:800;cursor:pointer;}
+footer{border-top:1px solid var(--border);padding:32px;text-align:center;font-size:12px;color:var(--muted2);margin-top:40px;}
+footer a{color:var(--accent2);text-decoration:none;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.job-card{animation:fadeUp .3s ease both;}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="nav-logo">Near<span>work</span></a>
+  <div class="nav-actions">
+    <div class="account-chip" id="account-chip"><span class="account-dot"></span><span id="account-name">Logged in</span></div>
+    <button type="button" class="nav-login" id="login-btn" onclick="openLogin()">Log in</button>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-eyebrow">Open roles · Colombia → US SaaS</div>
+  <h1 class="hero-title">Find remote work<br><em>that feels exciting.</em></h1>
+  <p class="hero-sub">Browse US SaaS roles, save your candidate profile, and apply faster the next time a great match opens up.</p>
+  <div class="hero-cta-row">
+    <a class="hero-cta" href="#openings">See open roles →</a>
+    <button type="button" class="hero-cta alt" onclick="openLogin()">Log in to your profile</button>
+  </div>
+  <div class="hero-stats">
+    <div><div class="hs-num" id="stat-open">—</div><div class="hs-label">Open roles</div></div>
+    <div><div class="hs-num">100%</div><div class="hs-label">Remote</div></div>
+    <div><div class="hs-num">USD</div><div class="hs-label">Salary</div></div>
+    <div><div class="hs-num">6mo</div><div class="hs-label">Guarantee</div></div>
+  </div>
+</section>
+
+<div class="filters-bar">
+  <div class="filters-inner">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="search" placeholder="Search roles, skills..." oninput="filterJobs()">
+    </div>
+    <select class="filter-sel" id="filter-wfh" onchange="filterJobs()">
+      <option value="">Work type</option><option>Remote</option><option>On-site</option><option>Hybrid</option>
+    </select>
+    <select class="filter-sel" id="filter-exp" onchange="filterJobs()">
+      <option value="">Experience</option><option>Junior</option><option>Mid</option><option>Senior</option>
+    </select>
+    <select class="filter-sel" id="filter-industry" onchange="filterJobs()">
+      <option value="">Industry</option><option>SaaS / B2B Tech</option><option>FinTech</option><option>HealthTech</option><option>EdTech</option><option>MarTech</option>
+    </select>
+    <span class="results-count" id="results-count"></span>
+  </div>
+</div>
+
+<main class="main" id="openings">
+  <div class="trust-row">
+    <div class="trust-item"><strong>One profile, faster applies</strong>Your account keeps the basics ready for future openings.</div>
+    <div class="trust-item"><strong>Remote-first opportunities</strong>Roles are built for Colombia-based talent working with US teams.</div>
+    <div class="trust-item"><strong>Clear next steps</strong>Apply first, then Nearwork reviews before adding anyone to the pipeline.</div>
+  </div>
+  <div class="error-banner" id="error-banner">Unable to load openings. Please refresh or try again shortly.</div>
+  <div class="loading" id="loading-state"><div class="loader"></div><div style="font-size:13px;color:var(--muted);">Loading open roles...</div></div>
+  <div class="jobs-grid" id="jobs-grid" style="display:none;" aria-label="Open roles"></div>
+  <div class="empty-state" id="empty-state" style="display:none;">
+    <div class="empty-icon">🔍</div>
+    <div class="empty-title">No roles match your search</div>
+    <div class="empty-sub">Try different filters or check back soon — we add new openings regularly.</div>
+  </div>
+</main>
+
+<div class="login-modal" id="login-modal" role="dialog" aria-modal="true" aria-labelledby="login-title">
+  <div class="login-box">
+    <div class="login-title" id="login-title">Log in to Nearwork</div>
+    <div class="login-sub">Use the email on your Nearwork profile. If we find your account, we will show that you are logged in and speed up applications.</div>
+    <div class="login-row">
+      <input type="email" id="login-email" placeholder="you@email.com" autocomplete="email">
+      <button type="button" class="login-btn" onclick="loginCandidate()">Continue</button>
+    </div>
+    <div class="login-row" id="login-password-row" style="display:none;margin-top:8px;">
+      <input type="password" id="login-password" placeholder="Password" autocomplete="current-password">
+      <button type="button" class="login-btn" onclick="loginCandidate()">Log in</button>
+    </div>
+    <button type="button" class="google-btn" onclick="loginWithGoogle()">Continue with Google</button>
+    <div class="login-foot">
+      <div class="login-msg" id="login-msg">New here? Pick a role and create your profile before applying.</div>
+      <button type="button" class="login-close" onclick="closeLogin()">Close</button>
+    </div>
+  </div>
+</div>
+
+<footer>© 2026 Nearwork · <a href="https://nearwork.co">nearwork.co</a> · Built for Colombia. Designed for the world.</footer>
+
+<script type="module">
+import { getPublishedOpenings, getCandidateByEmail, signInCandidate, signInCandidateWithGoogle, getCandidateSession, saveCandidateSession, clearCandidateSession, waitForAuthReady } from './firebase-config.js';
+
+let allOpenings = [];
+let loggedCandidate = null;
+let pendingLoginCandidate = null;
+
+function slugify(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function escapeHtml(value = '') {
+  return String(value).replace(/[&<>"']/g, ch => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[ch]));
+}
+
+function friendlyAuthError(error) {
+  const code = error?.code || '';
+  if (code.includes('unauthorized-domain')) return 'Google sign-in is not enabled for jobs.nearwork.co yet. Add jobs.nearwork.co in Firebase Auth authorized domains.';
+  if (code.includes('operation-not-allowed')) return 'Google sign-in is not enabled in Firebase Authentication yet.';
+  if (code.includes('popup-blocked')) return 'Your browser blocked the Google sign-in popup. Allow popups for this site and try again.';
+  if (code.includes('popup-closed')) return 'The Google sign-in popup was closed before finishing.';
+  if (code.includes('cancelled-popup-request')) return 'Google sign-in was already open. Finish the popup or try again.';
+  return 'Google sign-in did not complete. Details: ' + (code || error?.message || 'Unknown error');
+}
+
+async function loadOpenings() {
+  try {
+    allOpenings = await getPublishedOpenings();
+  } catch(e) {
+    document.getElementById('error-banner').classList.add('show');
+    allOpenings = [];
+  }
+  document.getElementById('loading-state').style.display = 'none';
+  document.getElementById('stat-open').textContent = allOpenings.length;
+  if (allOpenings.length === 0) { document.getElementById('empty-state').style.display = 'block'; return; }
+  document.getElementById('jobs-grid').style.display = 'flex';
+  renderJobs(allOpenings);
+}
+
+function getSavedCandidate() {
+  return getCandidateSession();
+}
+
+function saveCandidate(candidate) {
+  loggedCandidate = candidate;
+  saveCandidateSession(candidate);
+  updateLoginState();
+}
+
+function updateLoginState() {
+  const saved = loggedCandidate || getSavedCandidate();
+  const chip = document.getElementById('account-chip');
+  const name = document.getElementById('account-name');
+  const btn = document.getElementById('login-btn');
+  if (!saved) {
+    chip.style.display = 'none';
+    btn.textContent = 'Log in';
+    return;
+  }
+  const label = saved.firstName ? saved.firstName + ' is logged in' : 'Profile logged in';
+  chip.style.display = 'flex';
+  name.textContent = label;
+  btn.textContent = 'Switch';
+}
+
+async function restoreAuthState() {
+  const user = await waitForAuthReady();
+  if (!user) {
+    clearCandidateSession();
+    loggedCandidate = null;
+  } else if (!getSavedCandidate()?.email && user.email) {
+    saveCandidate({
+      email: user.email,
+      firstName: user.displayName?.split(' ')[0] || '',
+      lastName: user.displayName?.split(' ').slice(1).join(' ') || ''
+    });
+    return;
+  }
+  updateLoginState();
+}
+
+window.openLogin = function() {
+  document.getElementById('login-modal').classList.add('show');
+  document.getElementById('login-password-row').style.display = 'none';
+  document.getElementById('login-password').value = '';
+  pendingLoginCandidate = null;
+  setTimeout(() => document.getElementById('login-email').focus(), 50);
+};
+
+window.closeLogin = function() {
+  document.getElementById('login-modal').classList.remove('show');
+};
+
+window.loginCandidate = async function() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const passwordRow = document.getElementById('login-password-row');
+  const msg = document.getElementById('login-msg');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    msg.textContent = 'Enter a valid email to check your profile.';
+    return;
+  }
+  if (passwordRow.style.display !== 'none') {
+    if (!password) {
+      msg.textContent = 'Enter your password to log in.';
+      return;
+    }
+    msg.textContent = 'Logging you in...';
+    try {
+      await signInCandidate(email, password);
+      let candidate = pendingLoginCandidate;
+      try {
+        candidate = await getCandidateByEmail(email);
+      } catch(e) {
+        candidate = null;
+      }
+      saveCandidate(candidate || { email });
+      msg.textContent = 'You are logged in. Applications will be faster now.';
+      setTimeout(window.closeLogin, 700);
+    } catch(e) {
+      const code = e.code || '';
+      msg.textContent = code.includes('wrong-password') || code.includes('invalid-credential')
+        ? 'That password did not work. Please try again.'
+        : code.includes('user-not-found')
+          ? 'This candidate profile needs a password setup in Firebase Auth before login will work.'
+          : 'Login failed. Please try again.';
+    }
+    return;
+  }
+  pendingLoginCandidate = { email };
+  passwordRow.style.display = 'flex';
+  msg.textContent = 'Enter your password to log in. If you are new, choose a role and create your account while applying.';
+  document.getElementById('login-password').focus();
+};
+
+window.loginWithGoogle = async function() {
+  const msg = document.getElementById('login-msg');
+  msg.textContent = 'Opening Google sign-in...';
+  try {
+    const user = await signInCandidateWithGoogle();
+    let candidate = null;
+    try {
+      candidate = user.email ? await getCandidateByEmail(user.email) : null;
+    } catch(e) {
+      candidate = null;
+    }
+    saveCandidate(candidate || {
+      email: user.email || '',
+      firstName: user.displayName?.split(' ')[0] || '',
+      lastName: user.displayName?.split(' ').slice(1).join(' ') || ''
+    });
+    msg.textContent = 'You are logged in with Google.';
+    setTimeout(window.closeLogin, 700);
+  } catch(e) {
+    msg.textContent = friendlyAuthError(e);
+  }
+};
+
+function renderJobs(openings) {
+  const grid = document.getElementById('jobs-grid');
+  grid.innerHTML = '';
+  document.getElementById('results-count').textContent = openings.length + ' role' + (openings.length !== 1 ? 's' : '');
+  document.getElementById('empty-state').style.display = openings.length === 0 ? 'block' : 'none';
+  openings.forEach((op, i) => {
+    const code = op.code || op.slug || op.id || slugify(op.title);
+    const codeParam = encodeURIComponent(code);
+    const skills = (op.skills || '').split(',').map(s=>s.trim()).filter(Boolean).slice(0,5);
+    const cur = op.currency || 'USD';
+    const sym = cur === 'COP' ? 'COP ' : '$';
+    const salaryStr = (op.salaryMin && op.salaryMax)
+      ? sym + parseInt(op.salaryMin).toLocaleString() + ' – ' + sym + parseInt(op.salaryMax).toLocaleString() + ' / mo ' + cur
+      : 'Salary on request';
+    const postedDate = op.createdAt?.toDate
+      ? op.createdAt.toDate().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})
+      : op.createdAt ? new Date(op.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
+    // Candidates never see "Draft" — all published openings show as hiring/open
+    const s = (op.status || '').toLowerCase();
+    const statusBadge = s === 'on hold'
+      ? '<span class="badge badge-amber">Applications open</span>'
+      : '<span class="badge badge-green">● Actively hiring</span>';
+    const card = document.createElement('a');
+    card.className = 'job-card';
+    card.href = '/apply.html?code=' + codeParam;
+    card.style.animationDelay = (i * 60) + 'ms';
+    card.innerHTML = `
+      <div class="jc-top">
+        <div>
+          <div class="jc-title">${escapeHtml(op.title || 'Opening')}</div>
+          <div class="jc-meta">
+            <span>${escapeHtml(op.wfh || 'Remote')}</span><span class="jc-dot"></span>
+            <span>${escapeHtml(op.city || 'Colombia-wide')}</span><span class="jc-dot"></span>
+            <span>${escapeHtml(op['sb-exp'] || op.exp || 'Mid-level')}</span>
+            ${postedDate ? '<span class="jc-dot"></span><span>Posted ' + postedDate + '</span>' : ''}
+          </div>
+        </div>
+        <div class="jc-badges">${statusBadge}<span class="badge badge-accent">${escapeHtml(op.industry || 'SaaS')}</span></div>
+      </div>
+      ${skills.length ? '<div class="jc-chips">' + skills.map(s=>'<span class="chip">'+escapeHtml(s)+'</span>').join('') + '</div>' : ''}
+      <div class="jc-footer">
+        <div class="jc-salary">${salaryStr}</div>
+        <div class="jc-cta">Apply now <span>→</span></div>
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+window.filterJobs = function() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const wfh = document.getElementById('filter-wfh').value.toLowerCase();
+  const exp = document.getElementById('filter-exp').value.toLowerCase();
+  const ind = document.getElementById('filter-industry').value;
+  const filtered = allOpenings.filter(op => {
+    const text = ((op.title||'')+' '+(op.skills||'')+' '+(op.industry||'')).toLowerCase();
+    return (!q || text.includes(q))
+        && (!wfh || (op.wfh||'').toLowerCase().includes(wfh))
+        && (!exp || (op['sb-exp']||op.exp||'').toLowerCase().includes(exp))
+        && (!ind || (op.industry||'') === ind);
+  });
+  renderJobs(filtered);
+};
+
+loadOpenings();
+restoreAuthState();
+</script>
+</body>
+</html>

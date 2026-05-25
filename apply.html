@@ -1385,6 +1385,12 @@ window.submitApp = async function() {
     document.getElementById('app-form').style.display = 'none';
     document.getElementById('success-screen').classList.add('show');
     window.scrollTo({top:0,behavior:'smooth'});
+    // Persist applied state so jobs.nearwork.co shows "✓ Applied" badge after refresh
+    try {
+      const _applied = new Set(JSON.parse(localStorage.getItem('nw_jobs_applied') || '[]'));
+      _applied.add(CODE);
+      localStorage.setItem('nw_jobs_applied', JSON.stringify([..._applied]));
+    } catch(_e) {}
   } catch(e) {
     console.error('Submit error:', e);
     submitBtn.textContent = 'Submit application →';

@@ -96,6 +96,18 @@ export default async function handler(req, res) {
     }
     candidateCode = candidateCode || candidateId;
 
+    const appliedDate = new Date().toISOString().split('T')[0];
+    const newApplication = {
+      opening: openingCode,
+      openingCode,
+      role: appData.openingTitle || openingCode,
+      openingTitle: appData.openingTitle || openingCode,
+      applied: appliedDate,
+      appliedAt: appliedDate,
+      status: 'applied',
+      outcome: 'Application only',
+      source: 'jobs.nearwork.co'
+    };
     const candidateProfile = {
       code: candidateCode,
       email,
@@ -119,7 +131,10 @@ export default async function handler(req, res) {
       ownerUid,
       lastAppliedOpeningCode: openingCode,
       lastAppliedAt: now,
-      updatedAt: now
+      updatedAt: now,
+      // Embed the application in the candidates doc so admin can find it
+      // even when Firestore security rules prevent reading the applications collection
+      applications: admin.firestore.FieldValue.arrayUnion(newApplication)
     };
     if (!existingCandidate) candidateProfile.createdAt = now;
 

@@ -1,7 +1,7 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import {
   getFirestore, collection, query, where,
-  getDocs, getDoc, doc, setDoc, addDoc, serverTimestamp
+  getDocs, getDoc, doc, setDoc, addDoc, serverTimestamp, arrayUnion
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import {
   getStorage, ref, uploadBytes, getDownloadURL
@@ -322,10 +322,25 @@ export async function submitApplication(applicationData) {
     }
   }
 
+  const appliedDate = new Date().toISOString().split('T')[0];
+  const embeddedApplication = {
+    opening: openingCode,
+    openingCode,
+    role: applicationData.openingTitle || openingCode,
+    openingTitle: applicationData.openingTitle || openingCode,
+    applied: appliedDate,
+    appliedAt: appliedDate,
+    status: 'applied',
+    outcome: 'Application only',
+    source: 'jobs.nearwork.co'
+  };
+  // Embed the application in the candidates doc so admin can find it
+  // even when Firestore security rules prevent reading the applications collection
+  const candidateProfileWithApp = { ...candidateProfile, applications: arrayUnion(embeddedApplication) };
   if (candId) {
     candCode = candCode || candId;
     try {
-      await withTimeout(setDoc(doc(db,'candidates',candId), candidateProfile, {merge:true}), 'candidate update');
+      await withTimeout(setDoc(doc(db,'candidates',candId), candidateProfileWithApp, {merge:true}), 'candidate update');
     } catch(e) {
       console.warn('candidate update skipped:', e.code || e.message);
     }
@@ -335,7 +350,7 @@ export async function submitApplication(applicationData) {
       candCode='CAND-'+Array.from({length:6},()=>chars[Math.floor(Math.random()*chars.length)]).join('');
     }
     candId=candCode;
-    await withTimeout(setDoc(doc(db,'candidates',candId),{code:candCode,status:'applied',createdAt:now,...candidateProfile}), 'candidate creation');
+    await withTimeout(setDoc(doc(db,'candidates',candId),{code:candCode,status:'applied',createdAt:now,...candidateProfileWithApp}), 'candidate creation');
   }
   const appliedDate = new Date().toISOString().split('T')[0];
   const existingApplications = Array.isArray(existingUser.applications) ? existingUser.applications : [];

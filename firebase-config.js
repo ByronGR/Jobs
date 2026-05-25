@@ -86,8 +86,10 @@ export async function waitForAuthReady(ms = 3000) {
 // Get all published openings — NO orderBy to avoid composite index requirement
 export async function getPublishedOpenings() {
   try {
-    const snap = await getDocs(
-      query(collection(db, 'openings'), where('published', '==', true))
+    const snap = await withTimeout(
+      getDocs(query(collection(db, 'openings'), where('published', '==', true))),
+      'getPublishedOpenings',
+      10000
     );
     const results = snap.docs
       .map(d => ({ id: d.id, ...d.data() }))
@@ -111,15 +113,15 @@ export async function getOpening(code) {
     const upper = raw.toUpperCase();
     const lower = raw.toLowerCase();
     const codeVariants = [...new Set([upper, raw, lower].filter(Boolean))];
-    let snap = await getDoc(doc(db, 'openings', upper));
-    if (!snap.exists()) snap = await getDoc(doc(db, 'openings', raw));
-    if (!snap.exists() && lower !== raw) snap = await getDoc(doc(db, 'openings', lower));
+    let snap = await withTimeout(getDoc(doc(db, 'openings', upper)), 'getOpening by id', 8000);
+    if (!snap.exists()) snap = await withTimeout(getDoc(doc(db, 'openings', raw)), 'getOpening raw', 8000);
+    if (!snap.exists() && lower !== raw) snap = await withTimeout(getDoc(doc(db, 'openings', lower)), 'getOpening lower', 8000);
     if (!snap.exists()) {
-      const byCode = await getDocs(query(collection(db, 'openings'), where('code', 'in', codeVariants)));
+      const byCode = await withTimeout(getDocs(query(collection(db, 'openings'), where('code', 'in', codeVariants))), 'getOpening by code', 8000);
       if (!byCode.empty) snap = byCode.docs[0];
     }
     if (!snap.exists()) {
-      const bySlug = await getDocs(query(collection(db, 'openings'), where('slug', 'in', codeVariants)));
+      const bySlug = await withTimeout(getDocs(query(collection(db, 'openings'), where('slug', 'in', codeVariants))), 'getOpening by slug', 8000);
       if (!bySlug.empty) snap = bySlug.docs[0];
     }
     if (!snap.exists()) return null;

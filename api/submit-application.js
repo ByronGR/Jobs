@@ -444,52 +444,25 @@ async function hasApplied({ db, uid, email, openingCode }) {
 }
 
 async function sendResendEmail({ to, candidateName, openingTitle, openingCode, candidateCode }) {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return { sent: false, skipped: true, reason: 'RESEND_API_KEY is not configured' };
-
-  const safeName = escapeHtml(candidateName || 'there');
-  const safeTitle = escapeHtml(openingTitle || 'this role');
-  const safeCode = escapeHtml(openingCode || '');
-  const safeCandidateCode = escapeHtml(candidateCode || '');
-  const from = process.env.RESEND_FROM || 'Nearwork <support@nearwork.co>';
-
-  const response = await fetch('https://api.resend.com/emails', {
+  // Use the Admin email API so candidates receive the full branded HTML template
+  // (the same beautiful design as account_created — built by buildApplicationSubmittedHtml).
+  const adminApiUrl = process.env.EMAIL_API_URL || 'https://admin.nearwork.co/api/send-email';
+  const firstName = String(candidateName || 'there').trim().split(/\s+/)[0] || 'there';
+  const response = await fetch(adminApiUrl, {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      from,
       to,
-      subject: `We received your application for ${openingTitle || 'this role'}`,
-      html: `
-        <div style="font-family:Arial,sans-serif;color:#182033;line-height:1.6">
-          <p>Hi ${safeName},</p>
-          <p>Thanks for applying to <strong>${safeTitle}</strong> with Nearwork.</p>
-          <p>We received your application and our team will review it. You should receive more information in the next couple of hours.</p>
-          ${safeCode ? `<p><strong>Opening:</strong> ${safeCode}</p>` : ''}
-          ${safeCandidateCode ? `<p><strong>Candidate reference:</strong> ${safeCandidateCode}</p>` : ''}
-          <p>We'll keep in touch.</p>
-          <p>Nearwork Team<br><a href="mailto:support@nearwork.co">support@nearwork.co</a></p>
-        </div>
-      `,
-      text: [
-        `Hi ${candidateName || 'there'},`,
-        '',
-        `Thanks for applying to ${openingTitle || 'this role'} with Nearwork.`,
-        'We received your application and our team will review it.',
-        'You should receive more information in the next couple of hours.',
-        openingCode ? `Opening: ${openingCode}` : '',
-        candidateCode ? `Candidate reference: ${candidateCode}` : '',
-        '',
-        "We'll keep in touch.",
-        'Nearwork Team',
-        'support@nearwork.co'
-      ].filter(Boolean).join('\n')
+      templateId: 'job_applied',
+      data: {
+        firstName,
+        name: candidateName || 'there',
+        roleTitle: openingTitle || openingCode || 'this role',
+        openingCode: openingCode || '',
+        actionUrl: 'https://talent.nearwork.co'
+      }
     })
   });
-
   const data = await response.json().catch(() => ({}));
   if (!response.ok) return { sent: false, error: data };
   return { sent: true, id: data.id };

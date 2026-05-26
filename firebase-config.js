@@ -354,7 +354,6 @@ export async function submitApplication(applicationData) {
     candId=candCode;
     await withTimeout(setDoc(doc(db,'candidates',candId),{code:candCode,status:'applied',createdAt:now,...candidateProfileWithApp}), 'candidate creation');
   }
-  const appliedDate = new Date().toISOString().split('T')[0];
   const existingApplications = Array.isArray(existingUser.applications) ? existingUser.applications : [];
   const nextApplications = [
     ...existingApplications.filter(app => {

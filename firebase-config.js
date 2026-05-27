@@ -246,6 +246,43 @@ export async function createCandidateAuth(email, password, displayName = '') {
   return credential.user;
 }
 
+async function _saveCandidateProfile(uid, email, displayName) {
+  const now = serverTimestamp();
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const candCode = 'CAND-' + Array.from({length:6}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  const nameParts = (displayName || '').trim().split(/\s+/).filter(Boolean);
+  const firstName = nameParts[0] || '';
+  const lastName = nameParts.slice(1).join(' ') || '';
+  const profile = {
+    email,
+    name: displayName || '',
+    firstName,
+    lastName,
+    role: 'candidate',
+    code: candCode,
+    candidateCode: candCode,
+    source: 'jobs.nearwork.co',
+    status: 'active',
+    createdAt: now,
+    updatedAt: now,
+    ownerUid: uid,
+    authUid: uid
+  };
+  await withTimeout(setDoc(doc(db, 'users', uid), profile, { merge: true }), 'user profile creation');
+  await withTimeout(setDoc(doc(db, 'candidates', candCode), { ...profile, id: candCode }, { merge: true }), 'candidate creation');
+  return { ...profile, id: uid };
+}
+
+export async function createNewCandidateAccount(email, password, displayName) {
+  const user = await createCandidateAuth(email, password, displayName);
+  const profile = await _saveCandidateProfile(user.uid, email.trim().toLowerCase(), displayName);
+  return { user, candCode: profile.code, profile };
+}
+
+export async function createCandidateProfile(uid, email, displayName) {
+  return _saveCandidateProfile(uid, (email || '').trim().toLowerCase(), displayName || '');
+}
+
 export async function signOutCandidate() {
   clearCandidateSession();
   await signOut(auth);

@@ -493,7 +493,7 @@ window.loginCandidate=async function(){
       saveCandidateSession(loggedCandidate);
       updateLoginState();
       msg.textContent='Account created! Welcome to Nearwork.';
-      fetch('https://admin.nearwork.co/api/sync-hubspot-candidate',{
+      fetch('https://admin.nearwork.co/api/sync-hubspot',{
         method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({candidate:{email:profile.email,name:profile.name,code:candCode,status:'active'},event:'signup'})
       }).catch(()=>{});
@@ -545,7 +545,7 @@ window.loginWithGoogle=async function(){
     if(isNew&&user.uid&&user.email){
       try{
         cand=await createCandidateProfile(user.uid,user.email,user.displayName||'');
-        fetch('https://admin.nearwork.co/api/sync-hubspot-candidate',{
+        fetch('https://admin.nearwork.co/api/sync-hubspot',{
           method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({candidate:{email:cand.email,name:cand.name,code:cand.code,status:'active'},event:'signup'})
         }).catch(()=>{});

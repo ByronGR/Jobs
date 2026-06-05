@@ -9,103 +9,105 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --ink:#111111;--ink2:#555555;--muted:#555555;--muted2:#9E9E9E;
-  --border:#EBEBEB;--bg:#FFFFFF;--surface:#F5F4F0;--accent:#12866E;--accent2:#16A085;--accent-soft:#E8F8F5;
-  --green:#12866E;--green-bg:#E8F8F5;--red:#C73565;
-  --sans:'Poppins',system-ui,sans-serif;--display:'Poppins',system-ui,sans-serif;
+  --ink:#111111;--ink2:#444444;--muted:#6B7280;--muted2:#9E9E9E;
+  --border:#EBEBEB;--border2:#D4D4D4;
+  --bg:#FFFFFF;--surface:#F5F4F0;
+  --accent:#16A085;--accent-dark:#12866E;--accent-soft:#E8F8F5;--accent-glow:rgba(22,160,133,.16);
+  --red:#E74C7C;--red-bg:#FDECF3;
+  --sans:'Poppins',system-ui,sans-serif;--nav-h:64px;
 }
+html{scroll-behavior:smooth;}
 body{font-family:var(--sans);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;}
-.nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.94);backdrop-filter:blur(18px);border-bottom:1px solid rgba(235,235,235,.95);padding:0 clamp(20px,4vw,48px);height:64px;display:flex;align-items:center;justify-content:space-between;}
-.nav-logo{font-family:var(--display);font-size:20px;font-weight:700;color:var(--ink);text-decoration:none;letter-spacing:-.02em;}
-.nav-logo span{color:var(--accent2);}
-.nav-actions{display:flex;align-items:center;gap:10px;}
-.nav-back{font-size:13px;font-weight:500;color:var(--muted);text-decoration:none;display:flex;align-items:center;gap:5px;transition:color .15s;}
+
+/* ── Nav ──────────────────────────────────────────────────────────────── */
+.nw-nav{position:sticky;top:0;z-index:200;height:var(--nav-h);background:rgba(255,255,255,.96);backdrop-filter:blur(18px);border-bottom:1px solid var(--border);padding:0 clamp(20px,4vw,48px);display:flex;align-items:center;gap:20px;}
+.nw-logo{font-size:19px;font-weight:900;color:var(--ink);letter-spacing:-.03em;text-decoration:none;position:relative;display:inline-block;white-space:nowrap;}
+.nw-logo-bar{position:absolute;bottom:-4px;left:0;width:56%;height:3px;background:var(--accent);border-radius:2px;}
+.nw-nav-right{display:flex;align-items:center;gap:8px;margin-left:auto;}
+.nav-back{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:600;color:var(--muted);text-decoration:none;transition:color .15s;}
 .nav-back:hover{color:var(--ink);}
-.nav-logout{display:none;padding:8px 14px;border:1px solid var(--border);border-radius:99px;font-size:13px;font-weight:700;color:var(--ink2);background:#fff;font-family:var(--sans);cursor:pointer;}
-.nav-logout:hover{border-color:#E74C7C;color:#C73565;}
-.nav-bell{width:36px;height:36px;border:1px solid var(--border);border-radius:99px;background:#fff;color:var(--ink2);font-size:16px;cursor:pointer;position:relative;}
+.nav-logout{display:none;padding:7px 14px;border:1px solid var(--border);border-radius:99px;font-size:13px;font-weight:700;color:var(--muted);background:#fff;font-family:var(--sans);cursor:pointer;transition:all .15s;}
+.nav-logout:hover{border-color:var(--red);color:var(--red);}
+/* Notification bell */
+.nav-bell{width:34px;height:34px;border:1px solid var(--border);border-radius:99px;background:#fff;color:var(--muted);font-size:15px;cursor:pointer;position:relative;display:inline-flex;align-items:center;justify-content:center;}
 .nav-bell[data-count]::after{content:attr(data-count);position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;border-radius:99px;background:var(--red);color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 4px;}
-.nav-pop{display:none;position:absolute;top:54px;right:84px;width:min(340px,calc(100vw - 32px));background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 18px 60px rgba(17,17,17,.14);padding:14px;z-index:200;}
+.nav-pop{display:none;position:absolute;top:calc(var(--nav-h) - 10px);right:clamp(20px,4vw,48px);width:min(340px,calc(100vw - 32px));background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 18px 60px rgba(17,17,17,.14);padding:16px;z-index:300;}
 .nav-pop.show{display:block;}
 .nav-pop strong{font-size:13px;display:block;margin-bottom:4px;}
 .nav-pop p{font-size:12px;color:var(--muted);line-height:1.55;}
-.page{max-width:1120px;margin:0 auto;padding:0 clamp(24px,5vw,56px) 80px;}
-/* Loading / error */
-.page-loading{text-align:center;padding:80px 24px;}
-.loader{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent2);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 14px;}
+
+/* ── Page wrapper ─────────────────────────────────────────────────────── */
+.nw-page{max-width:1140px;margin:0 auto;padding:40px clamp(24px,5vw,56px) 96px;}
+
+/* ── Loading / not-found ──────────────────────────────────────────────── */
+.page-loading{text-align:center;padding:100px 32px;}
+.loader{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 14px;}
 @keyframes spin{to{transform:rotate(360deg);}}
-.not-found{text-align:center;padding:80px 24px;}
-.not-found h2{font-family:'Poppins',sans-serif;font-size:26px;font-weight:800;margin-bottom:10px;letter-spacing:-1px;}
-.not-found p{color:var(--muted);font-size:14px;margin-bottom:20px;}
-/* Opening details */
-.opening-view{display:none;animation:fadeUp .3s ease both;padding-top:48px;}
-.opening-hero{position:relative;overflow:hidden;background:#fff;border-bottom:1px solid rgba(235,235,235,.95);border-radius:0;padding:58px 0 44px;margin:0 calc(50% - 50vw) 42px;}
-.opening-hero::before{display:none;}
-.opening-hero>*{position:relative;max-width:760px;margin-left:auto;margin-right:auto;padding-left:24px;padding-right:24px;}
-.opening-kicker{width:max-content;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--accent2);background:var(--accent-soft);border:1px solid rgba(22,160,133,.18);border-radius:99px;padding:5px 11px;margin-bottom:18px;}
-.opening-title{font-family:var(--display);font-size:clamp(42px,7vw,72px);font-weight:700;line-height:.98;letter-spacing:-.04em;margin-bottom:20px;}
-.opening-meta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;}
-.om-chip{font-size:13px;font-weight:600;color:rgba(15,23,42,.78);background:#fff;border:1px solid var(--border);border-radius:99px;padding:7px 12px;box-shadow:0 1px 2px rgba(15,23,42,.03);}
-.opening-summary{font-size:18px;color:var(--muted);line-height:1.7;margin-bottom:28px;max-width:720px;}
-.opening-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.btn-primary{padding:14px 26px;background:var(--accent2);color:#fff;border:none;border-radius:99px;font-size:14px;font-weight:800;font-family:var(--sans);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:7px;transition:all .2s;box-shadow:0 10px 24px -10px rgba(22,160,133,.45);}
-.btn-primary:hover{background:var(--accent);transform:translateY(-1px);}
-.btn-primary:disabled{opacity:.7;cursor:wait;transform:none;}
-.btn-secondary{padding:13px 22px;background:#fff;color:var(--ink2);border:1px solid var(--border);border-radius:99px;font-size:14px;font-weight:800;font-family:var(--sans);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:7px;transition:all .15s;}
-.btn-secondary[hidden]{display:none!important;}
-.btn-secondary:hover{border-color:var(--accent2);color:var(--accent2);}
-.details-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,360px);gap:18px;margin-bottom:18px;align-items:start;}
-.detail-panel{background:#fff;border:1px solid var(--border);border-radius:18px;padding:26px;box-shadow:0 1px 3px rgba(15,23,42,.04);}
-.detail-panel.full{grid-column:1 / -1;}
-.detail-title{font-family:var(--display);font-size:22px;font-weight:700;color:var(--ink);margin-bottom:12px;letter-spacing:-.02em;}
-.detail-body{font-size:15px;color:var(--muted);line-height:1.8;}
-.detail-body ul{padding-left:18px;}
-.detail-body li{margin-bottom:6px;}
-.quick-row{display:flex;gap:8px;}
-.quick-row input{flex:1;padding:10px 13px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:'Poppins',sans-serif;outline:none;}
-.quick-row input:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(22,160,133,.10);}
-.quick-msg{font-size:12px;color:var(--muted);margin-top:9px;display:none;}
-.quick-msg.show{display:block;}
-.account-view{display:none;animation:fadeUp .3s ease both;}
-.account-card{background:#fff;border:1px solid var(--border);border-radius:18px;padding:26px;margin:42px auto 18px;max-width:760px;box-shadow:0 10px 30px -18px rgba(15,23,42,.18);}
-.account-card h2{font-family:var(--display);font-size:28px;font-weight:700;letter-spacing:-.03em;margin-bottom:6px;}
-.account-card p{font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:18px;}
-.account-note{font-size:12px;color:var(--accent2);background:#E8F8F5;border-radius:10px;padding:12px;margin-bottom:16px;line-height:1.6;font-weight:600;}
-.google-account-btn{width:100%;padding:12px 16px;background:#fff;color:var(--ink);border:1px solid var(--border);border-radius:99px;font-size:14px;font-weight:800;font-family:var(--sans);cursor:pointer;margin-bottom:14px;}
-@media(max-width:640px){.details-grid{grid-template-columns:1fr;}.opening-title{font-size:25px;}.quick-row{flex-direction:column;}.quick-row .btn-secondary{justify-content:center;}}
-/* Intro card */
-.intro-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:20px 22px;margin-bottom:28px;display:flex;align-items:flex-start;gap:14px;}
-.ic-icon{width:42px;height:42px;border-radius:10px;background:#E8F8F5;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
-.ic-title{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:3px;}
-.ic-meta{font-size:12px;color:var(--muted);}
-/* Progress */
-.prog-wrap{margin-bottom:36px;}
-.prog-label-row{display:flex;align-items:center;gap:0;margin-bottom:8px;}
-.prog-step-item{display:flex;align-items:center;flex:1;}
-.pb{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;transition:all .3s;}
-.pb.done{background:var(--green);color:#fff;}
-.pb.active{background:var(--accent2);color:#fff;box-shadow:0 0 0 4px rgba(61,31,168,.15);}
-.pb.pending{background:var(--border);color:var(--muted2);}
-.pl{font-size:11px;font-weight:600;margin-left:7px;white-space:nowrap;}
-.pl.active{color:var(--accent2);}
-.pl.done{color:var(--green);}
-.pl.pending{color:var(--muted2);}
-.pline{flex:1;height:2px;background:var(--border);margin:0 6px;transition:background .3s;}
-.pline.done{background:var(--green);}
-/* Sections */
-.form-section{display:none;}
-.form-section.active{display:block;animation:fadeUp .3s ease both;}
+.not-found{text-align:center;padding:100px 32px;}
+.not-found h2{font-size:28px;font-weight:800;letter-spacing:-.04em;margin-bottom:10px;margin-top:16px;}
+.not-found p{font-size:14px;color:var(--muted);margin-bottom:24px;line-height:1.65;}
+
+/* ── Opening view ─────────────────────────────────────────────────────── */
+.opening-view{display:none;animation:fadeUp .3s ease both;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
-.section-note{font-size:11px;color:var(--accent2);font-weight:600;background:#E8F8F5;padding:3px 10px;border-radius:99px;display:inline-block;margin-bottom:12px;}
-.section-hdr h2{font-family:'Poppins',sans-serif;font-size:24px;font-weight:800;color:var(--ink);margin-bottom:6px;letter-spacing:-1px;}
-.section-hdr p{font-size:14px;color:var(--muted);line-height:1.65;margin-bottom:24px;}
-/* Fields */
-.field{margin-bottom:18px;}
+
+/* Header */
+.nw-op-eyebrow{display:inline-flex;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-dark);background:var(--accent-soft);border:1px solid rgba(22,160,133,.2);border-radius:99px;padding:4px 12px;margin-bottom:14px;}
+.opening-title{font-size:clamp(30px,5vw,52px);font-weight:800;color:var(--ink);letter-spacing:-.04em;line-height:1.05;margin-bottom:16px;}
+.nw-meta-row{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:24px;}
+/* .om-chip generated by JS */
+.om-chip{display:inline-flex;align-items:center;font-size:12px;font-weight:500;padding:5px 11px;border-radius:99px;border:1px solid var(--border2);color:var(--ink2);background:#fff;white-space:nowrap;}
+.opening-summary{font-size:16px;color:var(--muted);line-height:1.75;margin-bottom:32px;max-width:640px;}
+
+/* Two-column layout */
+.nw-detail-layout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:48px;align-items:start;}
+@media(max-width:860px){.nw-detail-layout{grid-template-columns:1fr;}.nw-aside-sticky{position:static!important;}}
+.nw-aside-sticky{position:sticky;top:calc(var(--nav-h) + 20px);}
+
+/* Detail panels (generated by JS via renderDetailPanel) */
+.details-grid{display:flex;flex-direction:column;gap:28px;}
+.detail-panel{background:#fff;border:1px solid var(--border);border-radius:16px;padding:24px;}
+.detail-panel.full{} /* no-op in single-col layout */
+.detail-title{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-bottom:14px;}
+.detail-body{font-size:15px;color:var(--ink2);line-height:1.75;}
+.detail-body ul{list-style:none;padding:0;display:flex;flex-direction:column;gap:9px;}
+.detail-body li{display:flex;align-items:flex-start;gap:10px;}
+.detail-body li::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:8px;}
+
+/* Apply card (sidebar) */
+.nw-apply-card{background:#fff;border:1px solid var(--border);border-radius:20px;padding:24px;box-shadow:0 4px 24px rgba(0,0,0,.05);}
+.nw-apply-card-title{font-size:18px;font-weight:800;color:var(--ink);letter-spacing:-.03em;margin-bottom:6px;}
+.nw-apply-card-sub{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:20px;}
+
+/* Opening action buttons — keep class names for JS querySelector */
+.opening-actions{display:flex;flex-direction:column;gap:9px;}
+.btn-primary{width:100%;padding:14px 20px;background:var(--accent);color:#fff;border:none;border-radius:99px;font-size:14px;font-weight:800;font-family:var(--sans);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:7px;}
+.btn-primary:hover:not(:disabled){background:var(--accent-dark);}
+.btn-primary:disabled{opacity:.6;cursor:wait;}
+.btn-secondary{width:100%;padding:11px 20px;background:#fff;color:var(--muted);border:1px solid var(--border);border-radius:99px;font-size:13px;font-weight:700;font-family:var(--sans);cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:7px;}
+.btn-secondary:hover:not(:disabled){border-color:var(--accent);color:var(--accent);}
+.btn-secondary[hidden]{display:none!important;}
+
+/* ── Account gate ─────────────────────────────────────────────────────── */
+.account-view{display:none;animation:fadeUp .3s ease both;}
+.account-card{max-width:520px;margin:48px auto;background:#fff;border:1px solid var(--border);border-radius:20px;padding:32px;box-shadow:0 4px 24px rgba(0,0,0,.06);}
+.account-card h2{font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.04em;margin-bottom:6px;}
+.account-card p{font-size:13px;color:var(--muted);line-height:1.65;margin-bottom:18px;}
+.account-note{font-size:12px;font-weight:600;color:var(--accent-dark);background:var(--accent-soft);border:1px solid rgba(22,160,133,.2);border-radius:10px;padding:11px 14px;margin-bottom:18px;line-height:1.55;}
+.google-account-btn{width:100%;padding:12px 16px;background:#fff;color:var(--ink);border:1.5px solid var(--border2);border-radius:99px;font-size:14px;font-weight:700;font-family:var(--sans);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:border-color .15s;margin-bottom:6px;}
+.google-account-btn:hover{border-color:var(--accent);}
+
+/* Divider */
+.nw-divider{display:flex;align-items:center;gap:10px;margin:16px 0;font-size:11px;color:var(--muted2);font-weight:700;text-transform:uppercase;letter-spacing:.08em;}
+.nw-divider::before,.nw-divider::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* ── Fields (shared) ──────────────────────────────────────────────────── */
+.field{margin-bottom:16px;}
 .field label{display:block;font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:5px;}
 .field label .req{color:var(--red);}
-.field input,.field select,.field textarea{width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:'Poppins',sans-serif;color:var(--ink);background:#fff;outline:none;transition:border-color .2s,box-shadow .2s;}
-.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(22,160,133,.10);}
-.field input.err{border-color:var(--red);}
+.field input,.field select,.field textarea{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:var(--sans);color:var(--ink);background:#fff;outline:none;transition:border-color .2s,box-shadow .2s;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow);}
+.field input.err,.field select.err{border-color:var(--red);}
 .ferr{font-size:11px;color:var(--red);margin-top:4px;display:none;}
 .ferr.show{display:block;}
 .fhint{font-size:11px;color:var(--muted2);margin-top:5px;line-height:1.5;}
@@ -113,73 +115,131 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);-webkit-font-
 @media(max-width:500px){.field-row{grid-template-columns:1fr;}}
 .field select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:30px;}
 .field textarea{resize:vertical;min-height:80px;line-height:1.65;}
+.quick-msg{font-size:12px;color:var(--muted);margin-top:10px;display:none;}
+.quick-msg.show{display:block;}
+
+/* ── Account form nav ─────────────────────────────────────────────────── */
+.form-nav{display:flex;align-items:center;justify-content:space-between;margin-top:24px;padding-top:20px;border-top:1px solid var(--border);}
+.btn-back{padding:11px 20px;border:1.5px solid var(--border);border-radius:99px;font-size:13px;font-weight:700;font-family:var(--sans);cursor:pointer;background:#fff;color:var(--muted);transition:all .15s;}
+.btn-back:hover{border-color:var(--accent);color:var(--accent);}
+.btn-next{padding:11px 24px;background:var(--accent);color:#fff;border:none;border-radius:99px;font-size:14px;font-weight:700;font-family:var(--sans);cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:7px;}
+.btn-next:hover{background:var(--accent-dark);}
+
+/* ── Application form ─────────────────────────────────────────────────── */
+.nw-form-wrap{max-width:720px;margin:0 auto;}
+.intro-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px 22px;margin-bottom:28px;display:flex;align-items:center;gap:14px;}
+.ic-icon{width:44px;height:44px;border-radius:12px;background:var(--accent-soft);color:var(--accent-dark);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.ic-title{font-size:15px;font-weight:700;color:var(--ink);}
+.ic-meta{font-size:12px;color:var(--muted);margin-top:2px;}
+
+/* Progress stepper */
+.prog-wrap{margin-bottom:32px;}
+.prog-label-row{display:flex;align-items:center;}
+.prog-step-item{display:flex;align-items:center;flex:1;}
+.pb{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;transition:all .3s;}
+.pb.done{background:var(--accent);color:#fff;}
+.pb.active{background:var(--accent);color:#fff;box-shadow:0 0 0 4px var(--accent-glow);}
+.pb.pending{background:var(--border);color:var(--muted2);}
+.pl{font-size:11px;font-weight:600;margin-left:7px;white-space:nowrap;}
+.pl.active{color:var(--accent-dark);}
+.pl.done{color:var(--accent-dark);}
+.pl.pending{color:var(--muted2);}
+.pline{flex:1;height:2px;background:var(--border);margin:0 8px;transition:background .3s;}
+.pline.done{background:var(--accent);}
+
+/* Form sections */
+.form-section{display:none;}
+.form-section.active{display:block;animation:fadeUp .3s ease both;}
+.section-note{font-size:11px;font-weight:700;color:var(--accent-dark);background:var(--accent-soft);border:1px solid rgba(22,160,133,.2);border-radius:99px;padding:3px 11px;display:inline-block;margin-bottom:12px;}
+.section-hdr h2{font-size:24px;font-weight:800;color:var(--ink);margin-bottom:6px;letter-spacing:-.04em;}
+.section-hdr p{font-size:14px;color:var(--muted);line-height:1.65;margin-bottom:22px;}
+.step-info{font-size:12px;color:var(--muted);}
+
 /* CV upload */
-.cv-drop{border:2px dashed var(--border);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:all .2s;background:#fff;}
-.cv-drop:hover,.cv-drop.drag-over{border-color:var(--accent2);background:#E8F8F5;}
-.cv-preview{display:none;align-items:center;gap:10px;padding:12px 14px;background:var(--green-bg);border:1.5px solid rgba(22,160,133,.20);border-radius:8px;margin-top:8px;}
+.cv-drop{border:2px dashed var(--border);border-radius:12px;padding:28px;text-align:center;cursor:pointer;transition:all .2s;background:#fff;}
+.cv-drop:hover,.cv-drop.drag-over{border-color:var(--accent);background:var(--accent-soft);}
+.cv-preview{display:none;align-items:center;gap:10px;padding:12px 14px;background:var(--accent-soft);border:1.5px solid rgba(22,160,133,.2);border-radius:10px;margin-top:8px;}
 .cv-preview.show{display:flex;}
-.cv-pname{font-size:13px;font-weight:600;color:var(--green);flex:1;}
-.cv-rem{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 5px;}
+.cv-pname{font-size:13px;font-weight:600;color:var(--accent-dark);flex:1;}
+.cv-rem{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px 5px;}
+
 /* Experience card */
-.exp-card{background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:18px;margin-bottom:14px;}
-.exp-num{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:12px;}
-.curr-toggle{display:flex;align-items:center;gap:7px;margin-top:5px;cursor:pointer;user-select:none;}
-.curr-toggle input{width:15px;height:15px;accent-color:var(--accent2);cursor:pointer;}
-.curr-toggle span{font-size:13px;color:var(--ink2);}
-/* Skills */
+.exp-card{background:#fff;border:1.5px solid var(--border);border-radius:14px;padding:20px;margin-bottom:14px;}
+.exp-num{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:14px;}
+.curr-toggle{display:flex;align-items:center;gap:7px;margin-top:7px;cursor:pointer;user-select:none;font-size:13px;color:var(--ink2);}
+.curr-toggle input{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;}
+
+/* Skills picker */
 .skills-picker{display:flex;flex-wrap:wrap;gap:6px;}
 .skill-pill{padding:6px 13px;border-radius:99px;border:1.5px solid var(--border);font-size:12px;font-weight:500;color:var(--ink2);cursor:pointer;transition:all .15s;background:#fff;user-select:none;}
-.skill-pill:hover{border-color:var(--accent2);color:var(--accent2);}
-.skill-pill.selected{background:var(--accent2);color:#fff;border-color:var(--accent2);}
-.skills-count{font-size:11px;color:var(--muted2);margin-top:7px;}
-.skills-count span{color:var(--accent2);font-weight:700;}
-/* Questions */
-.q-item{background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:18px;margin-bottom:12px;transition:border-color .2s;}
-.q-item:focus-within{border-color:var(--accent2);}
+.skill-pill:hover{border-color:var(--accent);color:var(--accent);}
+.skill-pill.selected{background:var(--accent);color:#fff;border-color:var(--accent);}
+.skills-count{font-size:11px;color:var(--muted2);margin-top:8px;}
+.skills-count span{color:var(--accent-dark);font-weight:700;}
+
+/* Questions (generated by JS) */
+.q-item{background:#fff;border:1.5px solid var(--border);border-radius:14px;padding:20px;margin-bottom:12px;transition:border-color .2s;}
+.q-item:focus-within{border-color:var(--accent);}
 .q-num{font-size:10px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;}
 .q-text{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:12px;line-height:1.5;}
 .q-yn{display:flex;gap:8px;}
-.q-yn-btn{flex:1;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;font-family:'Poppins',sans-serif;cursor:pointer;background:#fff;color:var(--ink2);transition:all .15s;}
-.q-yn-btn.yes{background:var(--green-bg);border-color:var(--green);color:var(--green);}
+.q-yn-btn{flex:1;padding:11px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;font-family:var(--sans);cursor:pointer;background:#fff;color:var(--ink2);transition:all .15s;}
+.q-yn-btn.yes{background:var(--accent-soft);border-color:rgba(22,160,133,.4);color:var(--accent-dark);}
 .q-yn-btn.no{background:#FDECF3;border-color:#F6B6CB;color:var(--red);}
-/* Nav */
-.form-nav{display:flex;align-items:center;justify-content:space-between;margin-top:28px;padding-top:22px;border-top:1px solid var(--border);}
-.btn-back{padding:10px 20px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;font-family:'Poppins',sans-serif;cursor:pointer;background:#fff;color:var(--ink2);transition:all .15s;}
-.btn-back:hover{border-color:var(--accent2);color:var(--accent2);}
-.btn-next,.btn-submit{padding:11px 26px;background:var(--accent2);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;font-family:'Poppins',sans-serif;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:7px;}
-.btn-next:hover,.btn-submit:hover{background:var(--accent);transform:translateY(-1px);}
-.step-info{font-size:12px;color:var(--muted);}
-/* Success */
-.success{display:none;text-align:center;padding:60px 24px;animation:fadeUp .5s ease both;}
-.success.show{display:block;}
-.success-icon{font-size:52px;margin-bottom:18px;}
-.success-title{font-family:'Poppins',sans-serif;font-size:28px;font-weight:800;color:var(--ink);margin-bottom:10px;letter-spacing:-1px;}
-.success-sub{font-size:14px;color:var(--muted);line-height:1.75;max-width:420px;margin:0 auto 24px;}
-.submit-error{display:none;margin-top:14px;padding:12px;border:1px solid #F6B6CB;background:#FDECF3;color:#C73565;border-radius:10px;font-size:12px;line-height:1.5;}
+
+/* Submit error */
+.submit-error{display:none;margin-top:14px;padding:12px 14px;border:1px solid #F6B6CB;background:#FDECF3;color:#C73565;border-radius:10px;font-size:12px;line-height:1.5;}
 .submit-error.show{display:block;}
-.success-ref{font-size:12px;font-family:monospace;background:#E8F8F5;color:var(--accent2);padding:5px 13px;border-radius:99px;display:inline-block;margin-bottom:28px;}
-.btn-talent{padding:12px 22px;background:var(--accent2);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;font-family:'Poppins',sans-serif;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:7px;margin-bottom:10px;}
-.btn-browse{display:block;font-size:13px;color:var(--muted);text-decoration:none;margin-top:6px;}
-.already-applied{display:none;background:#fff;border:1.5px solid var(--border);border-radius:14px;padding:34px;text-align:center;animation:fadeUp .3s ease both;}
-.already-applied.show{display:block;}
-.already-applied h2{font-size:26px;font-weight:900;letter-spacing:-.8px;margin-bottom:8px;}
-.already-applied p{font-size:14px;color:var(--muted);line-height:1.7;max-width:520px;margin:0 auto 22px;}
+
+/* Submit button */
+.btn-submit{padding:12px 26px;background:var(--accent);color:#fff;border:none;border-radius:99px;font-size:14px;font-weight:700;font-family:var(--sans);cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:7px;}
+.btn-submit:hover:not(:disabled){background:var(--accent-dark);}
+.btn-submit:disabled{opacity:.6;cursor:wait;}
+
+/* ── Success ──────────────────────────────────────────────────────────── */
+.success{display:none;text-align:center;padding:80px 24px;animation:fadeUp .5s ease both;}
+.success.show{display:block;}
+.success-icon{font-size:56px;margin-bottom:20px;}
+.success-title{font-size:30px;font-weight:800;color:var(--ink);margin-bottom:10px;letter-spacing:-.04em;}
+.success-sub{font-size:15px;color:var(--muted);line-height:1.75;max-width:440px;margin:0 auto 24px;}
+.success-ref{font-size:12px;font-family:monospace;background:var(--accent-soft);color:var(--accent-dark);padding:5px 14px;border-radius:99px;display:inline-block;margin-bottom:28px;}
+.btn-talent{padding:13px 24px;background:var(--accent);color:#fff;border:none;border-radius:99px;font-size:13px;font-weight:700;font-family:var(--sans);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:7px;margin-bottom:10px;transition:background .2s;}
+.btn-talent:hover{background:var(--accent-dark);}
+.btn-browse{display:block;font-size:13px;color:var(--muted);text-decoration:none;margin-top:8px;transition:color .15s;}
 .btn-browse:hover{color:var(--ink);}
+
+/* ── Already applied ──────────────────────────────────────────────────── */
+.already-applied{display:none;max-width:520px;margin:60px auto;background:#fff;border:1.5px solid var(--border);border-radius:20px;padding:40px;text-align:center;animation:fadeUp .3s ease both;}
+.already-applied.show{display:block;}
+.already-applied h2{font-size:26px;font-weight:800;letter-spacing:-.04em;margin-bottom:8px;margin-top:12px;}
+.already-applied p{font-size:14px;color:var(--muted);line-height:1.7;max-width:420px;margin:0 auto 24px;}
+
+/* ── Responsive ───────────────────────────────────────────────────────── */
+@media(max-width:640px){
+  .field-row{grid-template-columns:1fr;}
+  .opening-title{font-size:clamp(26px,7vw,40px);}
+  .opening-actions{flex-direction:column;}
+  .form-nav{flex-wrap:wrap;gap:10px;}
+}
+input:focus,textarea:focus,select:focus{outline:none;}
 </style>
 </head>
 <body>
 
-<nav class="nav">
-  <a href="/" class="nav-logo">Near<span>work</span></a>
-  <div class="nav-actions">
+<nav class="nw-nav">
+  <a href="/" class="nw-logo">
+    Nearwork
+    <div class="nw-logo-bar"></div>
+  </a>
+  <div class="nw-nav-right">
     <button type="button" class="nav-bell" id="notification-bell" onclick="toggleJobNotifications()" aria-label="Notifications">🔔</button>
     <div class="nav-pop" id="notification-pop"><strong>Notifications</strong><p>Application updates, recruiter mentions, and next steps will appear in your Talent dashboard with date and time. Email summaries are grouped with a 2-hour buffer.</p></div>
     <button type="button" class="nav-logout" id="logout-btn" onclick="logoutCandidate()">Log out</button>
-    <a href="/" class="nav-back">← All roles</a>
+    <a href="/" class="nav-back" id="nav-back-link">← All roles</a>
   </div>
 </nav>
 
-<div class="page">
+<div class="nw-page">
 
   <!-- Loading -->
   <div id="page-loading" class="page-loading">
@@ -189,35 +249,57 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);-webkit-font-
 
   <!-- Not found -->
   <div id="page-not-found" class="not-found" style="display:none;">
-    <div style="font-size:48px;margin-bottom:16px;">🔒</div>
+    <div style="font-size:48px;">🔒</div>
     <h2>Opening not found</h2>
     <p>This opening may have closed or the link may be incorrect.</p>
-    <a href="/" style="color:var(--accent2);font-size:13px;font-weight:600;text-decoration:none;">← Browse all roles</a>
+    <a href="/" style="color:var(--accent);font-size:13px;font-weight:700;text-decoration:none;">← Browse all roles</a>
   </div>
 
-  <!-- Opening details (shown once opening loads) -->
+  <!-- ── Opening view ─────────────────────────────────────────────────── -->
   <div id="opening-view" class="opening-view">
-    <section class="opening-hero">
-      <div class="opening-kicker" id="opening-kicker">Open role</div>
-      <h1 class="opening-title" id="opening-title">Loading...</h1>
-      <div class="opening-meta" id="opening-meta"></div>
-      <p class="opening-summary" id="opening-summary"></p>
-      <div class="opening-actions">
-        <button type="button" class="btn-primary" onclick="startApplication()">Apply for this role →</button>
-        <button type="button" class="btn-secondary" onclick="showAccountStep()">Log in or create profile</button>
-      </div>
-    </section>
 
-    <div class="details-grid" id="details-grid"></div>
+    <!-- Header: kicker + title + meta chips -->
+    <div style="margin-bottom:32px;">
+      <div class="nw-op-eyebrow" id="opening-kicker">Open role</div>
+      <h1 class="opening-title" id="opening-title">Loading...</h1>
+      <div class="nw-meta-row" id="opening-meta"></div>
+    </div>
+
+    <!-- Two-column: detail left, apply card right -->
+    <div class="nw-detail-layout">
+
+      <!-- Left: summary + detail panels -->
+      <div>
+        <p class="opening-summary" id="opening-summary"></p>
+        <div class="details-grid" id="details-grid"></div>
+      </div>
+
+      <!-- Right: sticky apply card -->
+      <div class="nw-aside-sticky">
+        <div class="nw-apply-card">
+          <div class="nw-apply-card-title">Interested in this role?</div>
+          <div class="nw-apply-card-sub">Apply in minutes. Your profile is reused for every future application.</div>
+          <div class="opening-actions">
+            <button type="button" class="btn-primary" onclick="startApplication()">Apply for this role →</button>
+            <button type="button" class="btn-secondary" onclick="showAccountStep()">Log in or create profile</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
   </div>
 
-  <!-- Account gate -->
+  <!-- ── Account gate ─────────────────────────────────────────────────── -->
   <div id="account-view" class="account-view">
     <section class="account-card">
       <h2>Start your application</h2>
       <p>Enter your email first. If you already have a Nearwork account, we will ask for your password. If not, you can create your profile and continue.</p>
       <div class="account-note" id="account-note">Your profile keeps the basics ready for future openings.</div>
-      <button type="button" class="google-account-btn" onclick="continueWithGoogle()">Continue with Google</button>
+      <button type="button" class="google-account-btn" onclick="continueWithGoogle()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Continue with Google
+      </button>
+      <div class="nw-divider">or</div>
       <div class="field-row">
         <div class="field"><label>First name <span class="req">*</span></label><input type="text" id="a-first" placeholder="María" autocomplete="given-name"><div class="ferr" id="err-a-first">Required</div></div>
         <div class="field"><label>Last name <span class="req">*</span></label><input type="text" id="a-last" placeholder="García" autocomplete="family-name"><div class="ferr" id="err-a-last">Required</div></div>
@@ -242,140 +324,145 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);-webkit-font-
         <div class="field"><label>Confirm password <span class="req">*</span></label><input type="password" id="a-password2" placeholder="Confirm password" autocomplete="new-password"><div class="ferr" id="err-a-password2">Passwords must match</div></div>
       </div>
       <div class="quick-msg" id="account-msg"></div>
-      <div class="form-nav"><button class="btn-back" onclick="backToOpening()">← Back</button><button class="btn-next" id="account-continue-btn" onclick="handleAccountContinue()">Continue →</button></div>
+      <div class="form-nav">
+        <button class="btn-back" onclick="backToOpening()">← Back</button>
+        <button class="btn-next" id="account-continue-btn" onclick="handleAccountContinue()">Continue →</button>
+      </div>
     </section>
   </div>
 
-  <!-- Application form (shown once opening loads) -->
+  <!-- ── Application form ─────────────────────────────────────────────── -->
   <div id="app-form" style="display:none;">
+    <div class="nw-form-wrap">
 
-    <!-- Intro card -->
-    <div class="intro-card">
-      <div class="ic-icon">💼</div>
-      <div>
-        <div class="ic-title" id="ic-title">Loading...</div>
-        <div class="ic-meta" id="ic-meta"></div>
+      <!-- Intro card -->
+      <div class="intro-card">
+        <div class="ic-icon">💼</div>
+        <div>
+          <div class="ic-title" id="ic-title">Loading...</div>
+          <div class="ic-meta" id="ic-meta"></div>
+        </div>
       </div>
-    </div>
 
-    <!-- Progress -->
-    <div class="prog-wrap">
-      <div class="prog-label-row" id="prog-row">
-        <div class="prog-step-item">
-          <div class="pb active" id="pb-1">1</div>
-          <span class="pl active" id="pl-1">Profile</span>
-        </div>
-        <div class="pline" id="pline-1"></div>
-        <div class="prog-step-item">
-          <div class="pb pending" id="pb-2">2</div>
-          <span class="pl pending" id="pl-2">Experience</span>
-        </div>
-        <div class="pline" id="pline-2"></div>
-        <div class="prog-step-item">
-          <div class="pb pending" id="pb-3">3</div>
-          <span class="pl pending" id="pl-3">Opening Questions</span>
+      <!-- Progress stepper -->
+      <div class="prog-wrap">
+        <div class="prog-label-row" id="prog-row">
+          <div class="prog-step-item">
+            <div class="pb active" id="pb-1">1</div>
+            <span class="pl active" id="pl-1">Profile</span>
+          </div>
+          <div class="pline" id="pline-1"></div>
+          <div class="prog-step-item">
+            <div class="pb pending" id="pb-2">2</div>
+            <span class="pl pending" id="pl-2">Experience</span>
+          </div>
+          <div class="pline" id="pline-2"></div>
+          <div class="prog-step-item">
+            <div class="pb pending" id="pb-3">3</div>
+            <span class="pl pending" id="pl-3">Questions</span>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- ── SECTION 1: Profile ── -->
-    <div class="form-section active" id="sec-1">
-      <div class="section-hdr">
-        <div class="section-note">Section 1 of 3 · Always required</div>
-        <h2>Your profile</h2>
-        <p>Basic information that applies to every role you apply for on Nearwork.</p>
-      </div>
-      <div class="field-row">
-        <div class="field"><label>First name <span class="req">*</span></label><input type="text" id="f-first" placeholder="María" autocomplete="given-name"><div class="ferr" id="err-first">Required</div></div>
-        <div class="field"><label>Last name <span class="req">*</span></label><input type="text" id="f-last" placeholder="García" autocomplete="family-name"><div class="ferr" id="err-last">Required</div></div>
-      </div>
-      <div class="field-row">
-        <div class="field"><label>Email address <span class="req">*</span></label><input type="email" id="f-email" placeholder="maria@email.com" autocomplete="email"><div class="ferr" id="err-email">Enter a valid email</div><div class="fhint">Applying again with the same email updates your profile — no duplicate accounts.</div></div>
-        <div class="field"><label>Phone <span class="req">*</span></label><input type="tel" id="f-phone" placeholder="+57 300 000 0000" autocomplete="tel"><div class="ferr" id="err-phone">Required</div></div>
-      </div>
-      <div class="field-row">
-        <div class="field"><label>City <span class="req">*</span></label>
-          <select id="f-city"><option value="">Select city</option><option>Medellín</option><option>Bogotá</option><option>Cali</option><option>Barranquilla</option><option>Cartagena</option><option>Bucaramanga</option><option>Pereira</option><option>Manizales</option><option>Other</option></select>
-          <div class="ferr" id="err-city">Required</div>
+      <!-- ── SECTION 1: Profile ──────────────────────────────────────── -->
+      <div class="form-section active" id="sec-1">
+        <div class="section-hdr">
+          <div class="section-note">Section 1 of 3 · Always required</div>
+          <h2>Your profile</h2>
+          <p>Basic information that applies to every role you apply for on Nearwork.</p>
         </div>
-        <div class="field"><label>English level <span class="req">*</span></label>
-          <select id="f-english"><option value="">Select level</option><option>B1 Intermediate</option><option>B2 Upper-Intermediate</option><option>C1 Advanced</option><option>C2 / Native</option></select>
-          <div class="ferr" id="err-english">Required</div>
-        </div>
-      </div>
-      <div class="field-row">
-        <div class="field"><label>Expected monthly salary <span class="req">*</span></label><input type="number" id="f-expected-salary" min="0" step="100" placeholder="2500"><div class="ferr" id="err-expected-salary">Required</div><div class="fhint">Tell us what you are looking to earn monthly.</div></div>
-        <div class="field"><label>Currency <span class="req">*</span></label>
-          <select id="f-expected-currency"><option value="USD">USD</option><option value="COP">COP</option></select>
-        </div>
-      </div>
-      <div class="field"><label>LinkedIn profile</label><input type="url" id="f-linkedin" placeholder="https://linkedin.com/in/your-name"><div class="fhint">Optional but strongly recommended.</div></div>
-      <div class="field">
-        <label>CV / Resume <span class="req">*</span></label>
-        <div class="cv-drop" id="cv-drop" onclick="document.getElementById('cv-input').click()" ondragover="cvOver(event)" ondragleave="cvLeave()" ondrop="cvDrop(event)">
-          <div style="font-size:28px;margin-bottom:6px;">📎</div>
-          <div style="font-size:14px;font-weight:600;margin-bottom:3px;">Drop your CV here or click to upload</div>
-          <div style="font-size:12px;color:var(--muted2);">PDF, DOCX · Max 5 MB</div>
-        </div>
-        <input type="file" id="cv-input" accept=".pdf,.doc,.docx" style="display:none;" onchange="cvPicked(this)">
-        <div class="cv-preview" id="cv-preview"><span style="font-size:18px;">📄</span><span class="cv-pname" id="cv-pname"></span><button class="cv-rem" onclick="cvRemove()">✕</button></div>
-        <div class="ferr" id="err-cv">Please upload your CV</div>
-      </div>
-      <div class="form-nav"><div class="step-info">Step 1 of 3</div><button class="btn-next" onclick="goStep(2)">Continue →</button></div>
-    </div>
-
-    <!-- ── SECTION 2: Experience ── -->
-    <div class="form-section" id="sec-2">
-      <div class="section-hdr">
-        <div class="section-note">Section 2 of 3 · Always required</div>
-        <h2>Your experience</h2>
-        <p>Your two most recent or relevant roles, plus your top 5 skills.</p>
-      </div>
-      <div class="exp-card">
-        <div class="exp-num">Position 1 — most recent</div>
-        <div class="field"><label>Company name <span class="req">*</span></label><input type="text" id="e1-co" placeholder="e.g. Acme SaaS Inc."><div class="ferr" id="err-e1-co">Required</div></div>
-        <div class="field"><label>Your title <span class="req">*</span></label><input type="text" id="e1-title" placeholder="e.g. Customer Success Manager"><div class="ferr" id="err-e1-title">Required</div></div>
         <div class="field-row">
-          <div class="field"><label>Start date <span class="req">*</span></label><input type="month" id="e1-from"><div class="ferr" id="err-e1-from">Required</div></div>
-          <div class="field"><label>End date</label><input type="month" id="e1-to" placeholder="Leave blank if current"><label class="curr-toggle" style="margin-top:7px;"><input type="checkbox" id="e1-curr" onchange="toggleCurr('e1')"><span>I currently work here</span></label></div>
+          <div class="field"><label>First name <span class="req">*</span></label><input type="text" id="f-first" placeholder="María" autocomplete="given-name"><div class="ferr" id="err-first">Required</div></div>
+          <div class="field"><label>Last name <span class="req">*</span></label><input type="text" id="f-last" placeholder="García" autocomplete="family-name"><div class="ferr" id="err-last">Required</div></div>
         </div>
-        <div class="field"><label>Verification contact</label><input type="email" id="e1-contact" placeholder="hr@company.com"><div class="fhint">Optional — helps us verify your tenure quickly.</div></div>
-      </div>
-      <div class="exp-card">
-        <div class="exp-num">Position 2 — previous</div>
-        <div class="field"><label>Company name</label><input type="text" id="e2-co" placeholder="e.g. Startup Co."></div>
-        <div class="field"><label>Your title</label><input type="text" id="e2-title" placeholder="e.g. Account Manager"></div>
         <div class="field-row">
-          <div class="field"><label>Start date</label><input type="month" id="e2-from"></div>
-          <div class="field"><label>End date</label><input type="month" id="e2-to"><label class="curr-toggle" style="margin-top:7px;"><input type="checkbox" id="e2-curr" onchange="toggleCurr('e2')"><span>Currently work here</span></label></div>
+          <div class="field"><label>Email address <span class="req">*</span></label><input type="email" id="f-email" placeholder="maria@email.com" autocomplete="email"><div class="ferr" id="err-email">Enter a valid email</div><div class="fhint">Applying again with the same email updates your profile — no duplicate accounts.</div></div>
+          <div class="field"><label>Phone <span class="req">*</span></label><input type="tel" id="f-phone" placeholder="+57 300 000 0000" autocomplete="tel"><div class="ferr" id="err-phone">Required</div></div>
         </div>
-        <div class="field"><label>Verification contact</label><input type="email" id="e2-contact" placeholder="hr@company.com"></div>
+        <div class="field-row">
+          <div class="field"><label>City <span class="req">*</span></label>
+            <select id="f-city"><option value="">Select city</option><option>Medellín</option><option>Bogotá</option><option>Cali</option><option>Barranquilla</option><option>Cartagena</option><option>Bucaramanga</option><option>Pereira</option><option>Manizales</option><option>Other</option></select>
+            <div class="ferr" id="err-city">Required</div>
+          </div>
+          <div class="field"><label>English level <span class="req">*</span></label>
+            <select id="f-english"><option value="">Select level</option><option>B1 Intermediate</option><option>B2 Upper-Intermediate</option><option>C1 Advanced</option><option>C2 / Native</option></select>
+            <div class="ferr" id="err-english">Required</div>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Expected monthly salary <span class="req">*</span></label><input type="number" id="f-expected-salary" min="0" step="100" placeholder="2500"><div class="ferr" id="err-expected-salary">Required</div><div class="fhint">Tell us what you are looking to earn monthly.</div></div>
+          <div class="field"><label>Currency <span class="req">*</span></label>
+            <select id="f-expected-currency"><option value="USD">USD</option><option value="COP">COP</option></select>
+          </div>
+        </div>
+        <div class="field"><label>LinkedIn profile</label><input type="url" id="f-linkedin" placeholder="https://linkedin.com/in/your-name"><div class="fhint">Optional but strongly recommended.</div></div>
+        <div class="field">
+          <label>CV / Resume <span class="req">*</span></label>
+          <div class="cv-drop" id="cv-drop" onclick="document.getElementById('cv-input').click()" ondragover="cvOver(event)" ondragleave="cvLeave()" ondrop="cvDrop(event)">
+            <div style="font-size:28px;margin-bottom:6px;">📎</div>
+            <div style="font-size:14px;font-weight:600;margin-bottom:3px;">Drop your CV here or click to upload</div>
+            <div style="font-size:12px;color:var(--muted2);">PDF, DOCX · Max 5 MB</div>
+          </div>
+          <input type="file" id="cv-input" accept=".pdf,.doc,.docx" style="display:none;" onchange="cvPicked(this)">
+          <div class="cv-preview" id="cv-preview"><span style="font-size:18px;">📄</span><span class="cv-pname" id="cv-pname"></span><button class="cv-rem" onclick="cvRemove()">✕</button></div>
+          <div class="ferr" id="err-cv">Please upload your CV</div>
+        </div>
+        <div class="form-nav"><div class="step-info">Step 1 of 3</div><button class="btn-next" onclick="goStep(2)">Continue →</button></div>
       </div>
-      <div class="field">
-        <label>Top 5 skills <span class="req">*</span></label>
-        <div class="fhint" style="margin-bottom:10px;">Select exactly 5 skills that best describe your strengths.</div>
-        <div class="skills-picker" id="skills-picker"></div>
-        <div class="skills-count">Selected: <span id="skills-count">0</span> / 5</div>
-        <div class="ferr" id="err-skills">Please select exactly 5 skills</div>
-      </div>
-      <div class="form-nav"><button class="btn-back" onclick="goStep(1)">← Back</button><div style="display:flex;align-items:center;gap:10px;"><div class="step-info">Step 2 of 3</div><button class="btn-next" onclick="goStep(3)">Continue →</button></div></div>
-    </div>
 
-    <!-- ── SECTION 3: Opening Questions (dynamic) ── -->
-    <div class="form-section" id="sec-3">
-      <div class="section-hdr">
-        <div class="section-note">Section 3 of 3 · Specific to this role</div>
-        <h2>Opening questions</h2>
-        <p>These questions are specific to this role. Take your time — thoughtful answers make a real difference.</p>
+      <!-- ── SECTION 2: Experience ───────────────────────────────────── -->
+      <div class="form-section" id="sec-2">
+        <div class="section-hdr">
+          <div class="section-note">Section 2 of 3 · Always required</div>
+          <h2>Your experience</h2>
+          <p>Your two most recent or relevant roles, plus your top 5 skills.</p>
+        </div>
+        <div class="exp-card">
+          <div class="exp-num">Position 1 — most recent</div>
+          <div class="field"><label>Company name <span class="req">*</span></label><input type="text" id="e1-co" placeholder="e.g. Acme SaaS Inc."><div class="ferr" id="err-e1-co">Required</div></div>
+          <div class="field"><label>Your title <span class="req">*</span></label><input type="text" id="e1-title" placeholder="e.g. Customer Success Manager"><div class="ferr" id="err-e1-title">Required</div></div>
+          <div class="field-row">
+            <div class="field"><label>Start date <span class="req">*</span></label><input type="month" id="e1-from"><div class="ferr" id="err-e1-from">Required</div></div>
+            <div class="field"><label>End date</label><input type="month" id="e1-to" placeholder="Leave blank if current"><label class="curr-toggle" style="margin-top:7px;"><input type="checkbox" id="e1-curr" onchange="toggleCurr('e1')"><span>I currently work here</span></label></div>
+          </div>
+          <div class="field"><label>Verification contact</label><input type="email" id="e1-contact" placeholder="hr@company.com"><div class="fhint">Optional — helps us verify your tenure quickly.</div></div>
+        </div>
+        <div class="exp-card">
+          <div class="exp-num">Position 2 — previous</div>
+          <div class="field"><label>Company name</label><input type="text" id="e2-co" placeholder="e.g. Startup Co."></div>
+          <div class="field"><label>Your title</label><input type="text" id="e2-title" placeholder="e.g. Account Manager"></div>
+          <div class="field-row">
+            <div class="field"><label>Start date</label><input type="month" id="e2-from"></div>
+            <div class="field"><label>End date</label><input type="month" id="e2-to"><label class="curr-toggle" style="margin-top:7px;"><input type="checkbox" id="e2-curr" onchange="toggleCurr('e2')"><span>Currently work here</span></label></div>
+          </div>
+          <div class="field"><label>Verification contact</label><input type="email" id="e2-contact" placeholder="hr@company.com"></div>
+        </div>
+        <div class="field">
+          <label>Top 5 skills <span class="req">*</span></label>
+          <div class="fhint" style="margin-bottom:10px;">Select exactly 5 skills that best describe your strengths.</div>
+          <div class="skills-picker" id="skills-picker"></div>
+          <div class="skills-count">Selected: <span id="skills-count">0</span> / 5</div>
+          <div class="ferr" id="err-skills">Please select exactly 5 skills</div>
+        </div>
+        <div class="form-nav"><button class="btn-back" onclick="goStep(1)">← Back</button><div style="display:flex;align-items:center;gap:10px;"><div class="step-info">Step 2 of 3</div><button class="btn-next" onclick="goStep(3)">Continue →</button></div></div>
       </div>
-      <div id="questions-container"><!-- questions rendered by JS --></div>
-      <div class="submit-error" id="submit-error"></div>
-      <div class="form-nav"><button class="btn-back" onclick="goStep(2)">← Back</button><div style="display:flex;align-items:center;gap:10px;"><div class="step-info">Step 3 of 3</div><button class="btn-submit" onclick="submitApp()">Submit application →</button></div></div>
-    </div>
 
+      <!-- ── SECTION 3: Opening questions ───────────────────────────── -->
+      <div class="form-section" id="sec-3">
+        <div class="section-hdr">
+          <div class="section-note">Section 3 of 3 · Specific to this role</div>
+          <h2>Opening questions</h2>
+          <p>These questions are specific to this role. Take your time — thoughtful answers make a real difference.</p>
+        </div>
+        <div id="questions-container"><!-- questions rendered by JS --></div>
+        <div class="submit-error" id="submit-error"></div>
+        <div class="form-nav"><button class="btn-back" onclick="goStep(2)">← Back</button><div style="display:flex;align-items:center;gap:10px;"><div class="step-info">Step 3 of 3</div><button class="btn-submit" onclick="submitApp()">Submit application →</button></div></div>
+      </div>
+
+    </div><!-- /nw-form-wrap -->
   </div><!-- /app-form -->
 
-  <!-- Success screen -->
+  <!-- ── Success ──────────────────────────────────────────────────────── -->
   <div class="success" id="success-screen">
     <div class="success-icon">🎉</div>
     <div class="success-title">Application submitted!</div>
@@ -387,15 +474,16 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);-webkit-font-
     </div>
   </div>
 
+  <!-- ── Already applied ──────────────────────────────────────────────── -->
   <div class="already-applied" id="already-applied-screen">
-    <div class="success-icon">✓</div>
+    <div style="font-size:48px;">✓</div>
     <h2>You already applied to this role</h2>
     <p>Your application is saved in your Nearwork talent profile. You can review your application status from your talent dashboard.</p>
-    <a href="https://talent.nearwork.co/applications" class="btn-talent">View your opening in Talent →</a>
+    <a href="https://talent.nearwork.co/applications" class="btn-talent">View your application in Talent →</a>
     <a href="/" class="btn-browse">← Browse more roles</a>
   </div>
 
-</div><!-- /page -->
+</div><!-- /nw-page -->
 
 <script type="module">
 import { getOpening, getCandidateByEmail, signInCandidate, signInCandidateWithGoogle, createCandidateAuth, submitApplication, uploadCV, getCandidateSession, saveCandidateSession, waitForAuthReady, hasAppliedToOpening, signOutCandidate, clearCandidateSession, getCurrentUserProfile } from './firebase-config.js';
@@ -508,14 +596,11 @@ async function init() {
     opening.wfh || 'Remote',
     'Colombia-wide',
     sal,
-    '<strong style="color:var(--accent2);">' + CODE + '</strong>'
+    '<strong style="color:var(--accent);">' + CODE + '</strong>'
   ].filter(Boolean).join(' · ');
 
   // Update page title
   document.title = 'Apply — ' + (opening.title || 'Opening') + ' · Nearwork';
-
-  // Render back link to opening listing
-  document.querySelector('.nav-back').href = '/';
 
   // Render dynamic questions (Section 3)
   renderQuestions(opening.questionnaire || []);
@@ -575,7 +660,7 @@ function renderOpeningDetails() {
   const salary = (opening.salaryMin && opening.salaryMax)
     ? sym + parseInt(opening.salaryMin).toLocaleString() + ' – ' + sym + parseInt(opening.salaryMax).toLocaleString() + ' / mo ' + cur
     : openingValue(['salary', 'compensation'], 'Salary on request');
-  const skills = (opening.skills || '').split(',').map(s => s.trim()).filter(Boolean).slice(0, 6);
+  const skills = (Array.isArray(opening.skills)?opening.skills:(opening.skills || '').split(',')).map(s => s.trim()).filter(Boolean).slice(0, 6);
   const summary = openingValue(['content_about', 'summary', 'description', 'jobDescription', 'jd'], 'Review the role details below and apply when you are ready.');
 
   document.getElementById('opening-kicker').textContent = opening.industry || 'Open role';
@@ -1028,12 +1113,11 @@ function renderQuestions(questions) {
         <button type="button" class="q-yn-btn" onclick="pickYN('${qid}',this,'no')">✕ No</button>
       </div>
       <div id="qyn-detail-${qid}" style="display:none;margin-top:10px;">
-        <textarea id="qta-${qid}" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:'Poppins',sans-serif;outline:none;min-height:64px;resize:vertical;line-height:1.65;" placeholder="Please explain..." onfocus="this.style.borderColor='var(--accent2)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+        <textarea id="qta-${qid}" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:var(--sans);outline:none;min-height:64px;resize:vertical;line-height:1.65;" placeholder="Please explain..." onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"></textarea>
       </div>`;
     } else {
-      // short or long
       const rows = q.type === 'long' ? 5 : 3;
-      answerHtml = `<textarea id="qta-${qid}" rows="${rows}" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:'Poppins',sans-serif;outline:none;min-height:${q.type==='long'?'110':'72'}px;resize:vertical;line-height:1.65;" placeholder="Your answer..." onfocus="this.style.borderColor='var(--accent2)'" onblur="this.style.borderColor='var(--border)'"></textarea>`;
+      answerHtml = `<textarea id="qta-${qid}" rows="${rows}" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:var(--sans);outline:none;min-height:${q.type==='long'?'110':'72'}px;resize:vertical;line-height:1.65;" placeholder="Your answer..." onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"></textarea>`;
     }
 
     div.innerHTML = `
@@ -1336,12 +1420,10 @@ window.submitApp = async function() {
   // Upload CV first
   if (cvFile) {
     try {
-      // We don't have candCode yet — use a temp key
       const tempCode = 'TEMP-' + Date.now();
       cvUrl = await uploadCV(cvFile, tempCode);
     } catch(e) {
       console.error('CV upload failed:', e);
-      // Continue without CV URL — we'll note it
     }
   }
 
@@ -1381,11 +1463,9 @@ window.submitApp = async function() {
       lastName: appData.lastName
     });
     document.getElementById('success-ref').textContent = 'Reference: ' + CODE + ' · ' + candCode;
-    // Hide form, show success
     document.getElementById('app-form').style.display = 'none';
     document.getElementById('success-screen').classList.add('show');
     window.scrollTo({top:0,behavior:'smooth'});
-    // Persist applied state so jobs.nearwork.co shows "✓ Applied" badge after refresh
     try {
       const _applied = new Set(JSON.parse(localStorage.getItem('nw_jobs_applied') || '[]'));
       _applied.add(CODE);

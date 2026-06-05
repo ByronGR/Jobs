@@ -795,7 +795,17 @@ function App() {
         const raw = await fb.getPublishedOpenings();
         if (alive) {
           setRawOpenings(raw);
-          setJobs(raw.map(mapOpening));
+          const mapped = raw.map(mapOpening);
+          setJobs(mapped);
+          // Hash-based deep link — open matching job on page load
+          const hash = window.location.hash.slice(1);
+          if (hash) {
+            const target = mapped.find(j => j.id === hash);
+            if (target && !target.isClosed) {
+              setSelectedId(target.id);
+              setView('detail');
+            }
+          }
         }
       } catch(e) {
         if (alive) setError(true);
@@ -824,6 +834,7 @@ function App() {
     if (job.isClosed) return;
     setSelectedId(job.id);
     setView('detail');
+    history.pushState(null, '', '#' + job.id);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -831,6 +842,7 @@ function App() {
     setView(v);
     setSelectedId(null);
     setQuery('');
+    history.pushState(null, '', location.pathname);
     window.scrollTo({ top: 0 });
   };
 
@@ -850,6 +862,7 @@ function App() {
     setUser(null);
     setView('browse');
     setSelectedId(null);
+    history.pushState(null, '', location.pathname);
   };
 
   const openSignIn = () => { setAuthMode('login'); setShowAuth(true); };

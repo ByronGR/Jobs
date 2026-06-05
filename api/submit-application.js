@@ -250,17 +250,17 @@ export default async function handler(req, res) {
         const pipelineDoc = pipelineSnap.docs[0];
         const pipelineData = pipelineDoc.data() || {};
         const existingCandidates = Array.isArray(pipelineData.candidates) ? pipelineData.candidates : [];
-        const pipelineCandId = ownerUid || candidateId;
+        // candidateId is the Firestore document ID (CAND-XXXXX) — this is what
+        // the ATS pipeline page uses to match candidates (c.candidateId === candidate.id).
         const alreadyIn = existingCandidates.some(c =>
-          c.candidateId === pipelineCandId || c.candidateCode === candidateCode
+          c.candidateId === candidateId || c.candidateCode === candidateCode
         );
         if (!alreadyIn) {
           const pipelineEntry = {
-            candidateId: pipelineCandId,
-            candidateDocId: candidateId,
+            candidateId: candidateId,   // Firestore doc ID → matches candidate.id in ATS
             candidateCode,
-            candidateName: applicationPayload.candidateName,
-            candidateEmail: email,
+            name: applicationPayload.candidateName,
+            email,
             stage: 'applied',
             addedAt: new Date().toISOString(),
             source: 'jobs.nearwork.co',

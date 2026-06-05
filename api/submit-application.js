@@ -240,6 +240,44 @@ export default async function handler(req, res) {
 
     await db.collection('applications').doc(appId).set(applicationPayload, { merge: true });
 
+    // ── Add candidate to the pipeline so they appear in the ATS board ─────────
+    try {
+      const pipelineSnap = await db.collection('pipelines')
+        .where('code', '==', openingCode)
+        .limit(1)
+        .get();
+      if (!pipelineSnap.empty) {
+        const pipelineDoc = pipelineSnap.docs[0];
+        const pipelineData = pipelineDoc.data() || {};
+        const existingCandidates = Array.isArray(pipelineData.candidates) ? pipelineData.candidates : [];
+        const pipelineCandId = ownerUid || candidateId;
+        const alreadyIn = existingCandidates.some(c =>
+          c.candidateId === pipelineCandId || c.candidateCode === candidateCode
+        );
+        if (!alreadyIn) {
+          const pipelineEntry = {
+            candidateId: pipelineCandId,
+            candidateDocId: candidateId,
+            candidateCode,
+            candidateName: applicationPayload.candidateName,
+            candidateEmail: email,
+            stage: 'applied',
+            addedAt: new Date().toISOString(),
+            source: 'jobs.nearwork.co',
+            cvUrl: appData.cvUrl || null,
+            skills: Array.isArray(appData.skills) ? appData.skills : [],
+            expectedSalary: expectedSalaryLabel,
+          };
+          await pipelineDoc.ref.update({
+            candidates: admin.firestore.FieldValue.arrayUnion(pipelineEntry),
+            updatedAt: now,
+          });
+        }
+      }
+    } catch (pipelineErr) {
+      console.warn('Pipeline update skipped:', pipelineErr.message);
+    }
+
     await db.collection('audit_logs').add({
       action: 'candidate_applied',
       entity: 'candidate',

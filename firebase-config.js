@@ -1,7 +1,7 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import {
   getFirestore, collection, query, where,
-  getDocs, getDoc, doc, setDoc, addDoc, serverTimestamp, arrayUnion
+  getDocs, getDoc, doc, setDoc, addDoc, updateDoc, serverTimestamp, arrayUnion
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import {
   getStorage, ref, uploadBytes, getDownloadURL
@@ -515,6 +515,45 @@ export async function submitApplication(applicationData) {
   } catch(e) {
     console.warn('audit log skipped:', e.code || e.message);
   }
+
+  // ── Add candidate to the pipeline so they appear in the ATS Applied column ──
+  try {
+    const pipelineQ = query(collection(db, 'pipelines'), where('code', '==', openingCode));
+    const pipelineSnap = await withTimeout(getDocs(pipelineQ), 'pipeline lookup', 6000);
+    if (!pipelineSnap.empty) {
+      const pipelineDoc = pipelineSnap.docs[0];
+      const pipelineData = pipelineDoc.data() || {};
+      const existingCandidates = Array.isArray(pipelineData.candidates) ? pipelineData.candidates : [];
+      const alreadyIn = existingCandidates.some(c =>
+        c.candidateId === candId || c.candidateCode === candCode
+      );
+      if (!alreadyIn) {
+        const candidateName = [applicationData.firstName, applicationData.lastName].filter(Boolean).join(' ');
+        const pipelineEntry = {
+          candidateId: candId,       // Firestore doc ID — matches candidate.id in ATS
+          candidateCode: candCode,
+          name: candidateName,
+          email,
+          stage: 'applied',
+          addedAt: new Date().toISOString(),
+          source: 'jobs.nearwork.co',
+          cvUrl: applicationData.cvUrl || null,
+          skills: applicationData.skills || [],
+          expectedSalary,
+        };
+        await withTimeout(
+          updateDoc(doc(db, 'pipelines', pipelineDoc.id), {
+            candidates: [...existingCandidates, pipelineEntry],
+            updatedAt: serverTimestamp(),
+          }),
+          'pipeline update', 6000
+        );
+      }
+    }
+  } catch(e) {
+    console.warn('pipeline update skipped:', e.code || e.message);
+  }
+
   return {candCode,candId,appId:savedAppRef.id};
 }
 

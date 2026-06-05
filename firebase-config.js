@@ -288,6 +288,25 @@ export async function signOutCandidate() {
   await signOut(auth);
 }
 
+// Returns true when the given UID belongs to a candidate (or a brand-new user
+// with no profile yet).  Returns false for client, admin, and staff accounts so
+// jobs.nearwork.co can reject them before they reach the application form.
+// Fails OPEN — if the lookup times out or errors, we allow rather than block a
+// real candidate who just happens to have a slow connection.
+export async function isCandidatePortalUser(uid) {
+  if (!uid) return false;
+  try {
+    const snap = await withTimeout(getDoc(doc(db, 'users', uid)), 'portal role check', 5000);
+    if (!snap.exists()) return true; // no users doc yet → brand-new user, allow
+    const role = String(snap.data()?.role || '').toLowerCase();
+    // Candidate accounts have role === 'candidate'.
+    // Every other non-empty role belongs to the app portal or admin.
+    return !role || role === 'candidate';
+  } catch {
+    return true; // fail open
+  }
+}
+
 export async function submitApplication(applicationData) {
   const { openingCode } = applicationData;
   const rawEmail = applicationData.email.trim();

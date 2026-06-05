@@ -213,6 +213,10 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);-webkit-font-
 .already-applied.show{display:block;}
 .already-applied h2{font-size:26px;font-weight:800;letter-spacing:-.04em;margin-bottom:8px;margin-top:12px;}
 .already-applied p{font-size:14px;color:var(--muted);line-height:1.7;max-width:420px;margin:0 auto 24px;}
+.wrong-portal{display:none;max-width:520px;margin:60px auto;background:#fff;border:1.5px solid var(--border);border-radius:20px;padding:40px;text-align:center;animation:fadeUp .3s ease both;}
+.wrong-portal.show{display:block;}
+.wrong-portal h2{font-size:26px;font-weight:800;letter-spacing:-.04em;margin-bottom:8px;margin-top:12px;}
+.wrong-portal p{font-size:14px;color:var(--muted);line-height:1.7;max-width:420px;margin:0 auto 24px;}
 
 /* ── Responsive ───────────────────────────────────────────────────────── */
 @media(max-width:640px){
@@ -483,10 +487,19 @@ input:focus,textarea:focus,select:focus{outline:none;}
     <a href="/" class="btn-browse">← Browse more roles</a>
   </div>
 
+  <!-- ── Wrong portal ───────────────────────────────────────────────────── -->
+  <div class="wrong-portal" id="wrong-portal-screen">
+    <div style="font-size:48px;">🔒</div>
+    <h2>Wrong portal</h2>
+    <p>This email is registered as a company or staff account. Nearwork has separate portals for candidates and companies — candidate accounts are created directly on this site.</p>
+    <a href="https://app.nearwork.co" class="btn-talent">Go to the company portal →</a>
+    <a href="/" class="btn-browse">← Back to roles</a>
+  </div>
+
 </div><!-- /nw-page -->
 
 <script type="module">
-import { getOpening, getCandidateByEmail, signInCandidate, signInCandidateWithGoogle, createCandidateAuth, submitApplication, uploadCV, getCandidateSession, saveCandidateSession, waitForAuthReady, hasAppliedToOpening, signOutCandidate, clearCandidateSession, getCurrentUserProfile } from './firebase-config.js';
+import { getOpening, getCandidateByEmail, signInCandidate, signInCandidateWithGoogle, createCandidateAuth, submitApplication, uploadCV, getCandidateSession, saveCandidateSession, waitForAuthReady, hasAppliedToOpening, signOutCandidate, clearCandidateSession, getCurrentUserProfile, isCandidatePortalUser } from './firebase-config.js';
 
 // ── Extract opening code from URL: /apply/open-csm-4x8b ──────────────────
 const pathParts = window.location.pathname.split('/').filter(Boolean);
@@ -699,6 +712,19 @@ window.startApplication = async function() {
   }
   try {
   const currentUser = await clientTimeout(waitForAuthReady(), 3500, null, 'auth check');
+
+  // Fast-path role check: if a non-candidate session is already persisted
+  // (e.g. client logged into app.nearwork.co on the same browser), reject it
+  // before we show any form — don't wait for continueAfterAuth.
+  if (currentUser) {
+    const isCandidate = await clientTimeout(isCandidatePortalUser(currentUser.uid), 4000, true, 'portal role check');
+    if (!isCandidate) {
+      try { await signOutCandidate(); } catch {}
+      showWrongPortalScreen();
+      return;
+    }
+  }
+
   const saved = getSavedCandidate();
   if (currentUser?.email && (!saved?.email || saved.email.toLowerCase() !== currentUser.email.toLowerCase())) {
     let candidate = await clientTimeout(getCurrentUserProfile(), 3500, null, 'profile lookup');
@@ -783,7 +809,28 @@ function showAlreadyAppliedScreen() {
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
+function showWrongPortalScreen() {
+  document.getElementById('account-view').style.display = 'none';
+  document.getElementById('opening-view').style.display = 'none';
+  document.getElementById('app-form').style.display = 'none';
+  document.getElementById('success-screen').classList.remove('show');
+  document.getElementById('already-applied-screen').classList.remove('show');
+  document.getElementById('wrong-portal-screen').classList.add('show');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
 async function continueAfterAuth(user, candidate) {
+  // ── Portal role gate ──────────────────────────────────────────────────────
+  // All three portals (jobs, app, admin) share one Firebase project, so a
+  // session from app.nearwork.co is technically valid here too.  Block any
+  // non-candidate account before they can reach the application form.
+  const isCandidate = await clientTimeout(isCandidatePortalUser(user.uid), 4000, true, 'portal role check');
+  if (!isCandidate) {
+    try { await signOutCandidate(); } catch {}
+    showWrongPortalScreen();
+    return;
+  }
+
   // Always use the authenticated user's email for the duplicate check — using
   // candidate.email risks false positives when a stale session from a different
   // account is still in memory.

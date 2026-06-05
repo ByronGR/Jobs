@@ -188,10 +188,11 @@ function waitForFB() {
 }
 
 // ── localStorage helpers ──────────────────────────────────────────────────────
-const SAVED_KEY = 'nw_jobs_saved', APPLIED_KEY = 'nw_jobs_applied';
+const SAVED_KEY = 'nw_jobs_saved';
 function getSavedSet() { try { return new Set(JSON.parse(localStorage.getItem(SAVED_KEY) || '[]')); } catch { return new Set(); } }
 function setSavedSet(s) { try { localStorage.setItem(SAVED_KEY, JSON.stringify([...s])); } catch {} }
-function getAppliedSet() { try { return new Set(JSON.parse(localStorage.getItem(APPLIED_KEY) || '[]')); } catch { return new Set(); } }
+// Applied set is keyed per-user so two accounts on the same browser don't bleed
+function getAppliedSet(uid) { if (!uid) return new Set(); try { return new Set(JSON.parse(localStorage.getItem('nw_jobs_applied_' + uid) || '[]')); } catch { return new Set(); } }
 
 // ── Data mapping: Firestore opening doc → display model ───────────────────────
 const COMPANY_COLORS = ['#16A085','#2563EB','#7C3AED','#DC2626','#D97706','#0891B2','#059669','#C026D3'];
@@ -659,10 +660,10 @@ function AuthModal({ mode, onClose, onSuccess, onSwitchMode }) {
         }
         if (!password) { setErr('Enter your password.'); return; }
         setOk('Logging you in…');
-        await fb.signInCandidate(email, password);
+        const firebaseUser = await fb.signInCandidate(email, password);
         let cand = null;
         try { cand = await fb.getCandidateByEmail(email); } catch {}
-        const candidate = cand || { email };
+        const candidate = { ...(cand || { email }), uid: firebaseUser.uid };
         fb.saveCandidateSession(candidate);
         onSuccess(candidate);
       }
@@ -690,7 +691,7 @@ function AuthModal({ mode, onClose, onSuccess, onSwitchMode }) {
           }).catch(()=>{});
         } catch(pe) { console.warn('profile creation skipped:', pe.message); }
       }
-      const candidate = cand || { email: user.email||'', name: user.displayName||'' };
+      const candidate = { ...(cand || { email: user.email||'', name: user.displayName||'' }), uid: user.uid };
       fb.saveCandidateSession(candidate);
       onSuccess(candidate);
     } catch(e) {
@@ -775,7 +776,7 @@ function App() {
   const [filterExp, setFilterExp]       = useState('');
   const [filterInd, setFilterInd]       = useState('');
   const [saved, setSaved]               = useState(() => getSavedSet());
-  const [applied, setApplied]           = useState(() => getAppliedSet());
+  const [applied, setApplied]           = useState(new Set()); // loaded per-uid after auth resolves
   const [showAuth, setShowAuth]         = useState(false);
   const [authMode, setAuthMode]         = useState('login');
 
@@ -789,7 +790,10 @@ function App() {
         const firebaseUser = await fb.waitForAuthReady();
         if (alive && firebaseUser?.email) {
           const profile = await fb.getCurrentUserProfile();
-          if (alive) setUser(profile || { email: firebaseUser.email, name: firebaseUser.displayName||'' });
+          if (alive) {
+            setUser(profile || { email: firebaseUser.email, name: firebaseUser.displayName||'' });
+            setApplied(getAppliedSet(firebaseUser.uid));
+          }
         }
         // Load openings
         const raw = await fb.getPublishedOpenings();
@@ -848,6 +852,9 @@ function App() {
 
   const handleAuthSuccess = (candidate) => {
     setUser(candidate);
+    // candidate.uid is set for email-login; candidate.id is the Firebase UID for signup
+    const uid = candidate?.uid || candidate?.id;
+    if (uid) setApplied(getAppliedSet(uid));
     setShowAuth(false);
   };
 
@@ -860,6 +867,7 @@ function App() {
       fb.clearCandidateSession();
     }
     setUser(null);
+    setApplied(new Set()); // clear applied set — next user's data loads after they authenticate
     setView('browse');
     setSelectedId(null);
     history.pushState(null, '', location.pathname);

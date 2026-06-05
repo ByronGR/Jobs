@@ -784,7 +784,10 @@ function showAlreadyAppliedScreen() {
 }
 
 async function continueAfterAuth(user, candidate) {
-  const candidateEmail = candidate?.email || user.email || '';
+  // Always use the authenticated user's email for the duplicate check — using
+  // candidate.email risks false positives when a stale session from a different
+  // account is still in memory.
+  const candidateEmail = user.email || '';
   if (await clientTimeout(hasAppliedToOpening(user.uid, CODE, candidateEmail), 7000, false, 'duplicate application check')) {
     showAlreadyAppliedScreen();
     return;
@@ -1467,9 +1470,13 @@ window.submitApp = async function() {
     document.getElementById('success-screen').classList.add('show');
     window.scrollTo({top:0,behavior:'smooth'});
     try {
-      const _applied = new Set(JSON.parse(localStorage.getItem('nw_jobs_applied') || '[]'));
-      _applied.add(CODE);
-      localStorage.setItem('nw_jobs_applied', JSON.stringify([..._applied]));
+      const _uid = currentUser?.uid;
+      if (_uid) {
+        const _key = 'nw_jobs_applied_' + _uid;
+        const _applied = new Set(JSON.parse(localStorage.getItem(_key) || '[]'));
+        _applied.add(CODE);
+        localStorage.setItem(_key, JSON.stringify([..._applied]));
+      }
     } catch(_e) {}
   } catch(e) {
     console.error('Submit error:', e);

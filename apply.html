@@ -328,6 +328,17 @@ input:focus,textarea:focus,select:focus{outline:none;}
         <div class="field"><label>Password <span class="req">*</span></label><input type="password" id="a-password" placeholder="Password" autocomplete="new-password"><div class="ferr" id="err-a-password">Use at least 6 characters</div></div>
         <div class="field"><label>Confirm password <span class="req">*</span></label><input type="password" id="a-password2" placeholder="Confirm password" autocomplete="new-password"><div class="ferr" id="err-a-password2">Passwords must match</div></div>
       </div>
+      <div id="consent-block" style="display:none;margin:6px 0 4px;">
+        <label style="display:flex;align-items:flex-start;gap:9px;cursor:pointer;font-size:13px;color:#2d2d2d;line-height:1.5;margin-bottom:3px;">
+          <input type="checkbox" id="a-privacy" style="margin-top:3px;flex-shrink:0;accent-color:#16a085;">
+          <span>I have read and agree to Nearwork's <a href="https://nearwork.co/privacy" target="_blank" rel="noopener" style="color:#16a085;text-decoration:underline;">Privacy Policy</a> and <a href="https://nearwork.co/terms" target="_blank" rel="noopener" style="color:#16a085;text-decoration:underline;">Terms of Service</a> <span class="req">*</span></span>
+        </label>
+        <div class="ferr" id="err-a-privacy">You must accept the Privacy Policy to continue</div>
+        <label style="display:flex;align-items:flex-start;gap:9px;cursor:pointer;margin-top:10px;font-size:13px;color:#555;line-height:1.5;">
+          <input type="checkbox" id="a-marketing" style="margin-top:3px;flex-shrink:0;accent-color:#16a085;">
+          <span>I agree to receive future job opportunities and updates from Nearwork (optional)</span>
+        </label>
+      </div>
       <div class="quick-msg" id="account-msg"></div>
       <div class="form-nav">
         <button class="btn-back" onclick="backToOpening()">← Back</button>
@@ -500,7 +511,7 @@ input:focus,textarea:focus,select:focus{outline:none;}
 </div><!-- /nw-page -->
 
 <script type="module">
-import { getOpening, getCandidateByEmail, signInCandidate, signInCandidateWithGoogle, createCandidateAuth, submitApplication, uploadCV, getCandidateSession, saveCandidateSession, waitForAuthReady, hasAppliedToOpening, signOutCandidate, clearCandidateSession, getCurrentUserProfile, isCandidatePortalUser } from './firebase-config.js';
+import { getOpening, getCandidateByEmail, signInCandidate, signInCandidateWithGoogle, createCandidateAuth, submitApplication, uploadCV, getCandidateSession, saveCandidateSession, waitForAuthReady, hasAppliedToOpening, signOutCandidate, clearCandidateSession, getCurrentUserProfile, isCandidatePortalUser, syncCandidateToHubSpot } from './firebase-config.js';
 
 // ── Extract opening code from URL: /apply/open-csm-4x8b ──────────────────
 const pathParts = window.location.pathname.split('/').filter(Boolean);
@@ -969,6 +980,7 @@ function setAccountFieldsEnabled(enabled) {
     el.disabled = !enabled;
     el.style.opacity = enabled ? '1' : '.45';
   });
+  document.getElementById('consent-block').style.display = enabled ? '' : 'none';
 }
 
 function resetAccountMode(clearEmail = true) {
@@ -1014,6 +1026,7 @@ function validateAccountStep() {
   if (!english) { showErr('err-a-english'); ok=false; } else clearErr('err-a-english');
   if (!password || password.length < 6) { showErr('err-a-password'); ok=false; } else clearErr('err-a-password');
   if (password !== password2) { showErr('err-a-password2'); ok=false; } else clearErr('err-a-password2');
+  if (!document.getElementById('a-privacy').checked) { showErr('err-a-privacy'); ok=false; } else clearErr('err-a-privacy');
   return ok;
 }
 
@@ -1080,6 +1093,15 @@ window.handleAccountContinue = async function() {
 window.continueWithGoogle = async function() {
   const msg = document.getElementById('account-msg');
   msg.className = 'quick-msg show';
+  // Reveal consent block and require privacy acceptance before Google popup
+  document.getElementById('consent-block').style.display = '';
+  if (!document.getElementById('a-privacy')?.checked) {
+    showErr('err-a-privacy');
+    msg.textContent = 'Please accept the Privacy Policy to continue.';
+    document.getElementById('err-a-privacy').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  const marketingConsent = document.getElementById('a-marketing')?.checked === true;
   msg.textContent = 'Opening Google sign-in…';
   try {
     authUser = await signInCandidateWithGoogle();
@@ -1114,8 +1136,17 @@ window.continueWithGoogle = async function() {
       firstName: authUser.displayName?.split(' ')[0] || '',
       lastName: authUser.displayName?.split(' ').slice(1).join(' ') || ''
     };
-    if (authUser.metadata?.creationTime && authUser.metadata.creationTime === authUser.metadata.lastSignInTime) {
+    const isNewAccount = authUser.metadata?.creationTime && authUser.metadata.creationTime === authUser.metadata.lastSignInTime;
+    if (isNewAccount) {
       sendCandidateAccountCreatedEmail(candidate).catch(() => null);
+      if (marketingConsent) {
+        syncCandidateToHubSpot({
+          email: authUser.email || '',
+          name: authUser.displayName || '',
+          status: 'active',
+          source: 'jobs.nearwork.co'
+        }).catch(() => null);
+      }
     }
     await continueAfterAuth(authUser, candidate);
   } catch(e) {
@@ -1126,6 +1157,8 @@ window.continueWithGoogle = async function() {
 
 async function createProfileAndContinue() {
   const email = document.getElementById('a-email').value.trim();
+  const consentAt = new Date().toISOString();
+  const marketingConsent = document.getElementById('a-marketing')?.checked === true;
   const candidate = {
     email,
     firstName: document.getElementById('a-first').value.trim(),
@@ -1133,7 +1166,11 @@ async function createProfileAndContinue() {
     phone: document.getElementById('a-phone').value.trim(),
     city: document.getElementById('a-city').value,
     english: document.getElementById('a-english').value,
-    linkedin: document.getElementById('a-linkedin').value.trim()
+    linkedin: document.getElementById('a-linkedin').value.trim(),
+    privacyConsent: true,
+    privacyConsentAt: consentAt,
+    marketingConsent,
+    marketingConsentAt: marketingConsent ? consentAt : null
   };
   try {
     authUser = await createCandidateAuth(
@@ -1142,6 +1179,16 @@ async function createProfileAndContinue() {
       [candidate.firstName, candidate.lastName].filter(Boolean).join(' ')
     );
     sendCandidateAccountCreatedEmail(candidate).catch(() => null);
+    if (marketingConsent) {
+      syncCandidateToHubSpot({
+        email: candidate.email,
+        name: [candidate.firstName, candidate.lastName].filter(Boolean).join(' '),
+        phone: candidate.phone,
+        city: candidate.city,
+        status: 'active',
+        source: 'jobs.nearwork.co'
+      }).catch(() => null);
+    }
   } catch(e) {
     const code = e.code || '';
     if (code.includes('email-already-in-use')) {

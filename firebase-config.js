@@ -246,13 +246,14 @@ export async function createCandidateAuth(email, password, displayName = '') {
   return credential.user;
 }
 
-async function _saveCandidateProfile(uid, email, displayName) {
+async function _saveCandidateProfile(uid, email, displayName, consentData = {}) {
   const now = serverTimestamp();
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   const candCode = 'CAND-' + Array.from({length:6}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
   const nameParts = (displayName || '').trim().split(/\s+/).filter(Boolean);
   const firstName = nameParts[0] || '';
   const lastName = nameParts.slice(1).join(' ') || '';
+  const consentAt = new Date().toISOString();
   const profile = {
     email,
     name: displayName || '',
@@ -263,6 +264,10 @@ async function _saveCandidateProfile(uid, email, displayName) {
     candidateCode: candCode,
     source: 'jobs.nearwork.co',
     status: 'active',
+    privacyConsent: true,
+    privacyConsentAt: consentData.privacyConsentAt || consentAt,
+    marketingConsent: consentData.marketingConsent === true,
+    marketingConsentAt: consentData.marketingConsent === true ? (consentData.marketingConsentAt || consentAt) : null,
     createdAt: now,
     updatedAt: now,
     ownerUid: uid,
@@ -273,14 +278,29 @@ async function _saveCandidateProfile(uid, email, displayName) {
   return { ...profile, id: uid };
 }
 
-export async function createNewCandidateAccount(email, password, displayName) {
+export async function createNewCandidateAccount(email, password, displayName, consentData = {}) {
   const user = await createCandidateAuth(email, password, displayName);
-  const profile = await _saveCandidateProfile(user.uid, email.trim().toLowerCase(), displayName);
+  const profile = await _saveCandidateProfile(user.uid, email.trim().toLowerCase(), displayName, consentData);
   return { user, candCode: profile.code, profile };
 }
 
-export async function createCandidateProfile(uid, email, displayName) {
-  return _saveCandidateProfile(uid, (email || '').trim().toLowerCase(), displayName || '');
+export async function createCandidateProfile(uid, email, displayName, consentData = {}) {
+  return _saveCandidateProfile(uid, (email || '').trim().toLowerCase(), displayName || '', consentData);
+}
+
+export async function syncCandidateToHubSpot(candidate) {
+  const email = candidate?.email;
+  if (!email) return { ok: false, skipped: true };
+  try {
+    const response = await fetch('/api/sync-hubspot-candidate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ candidate: { ...candidate, email } })
+    });
+    return response.json().catch(() => ({ ok: false }));
+  } catch {
+    return { ok: false };
+  }
 }
 
 export async function signOutCandidate() {

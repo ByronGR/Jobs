@@ -343,6 +343,7 @@ export async function submitApplication(applicationData) {
   }
   const candidateProfile = {
     email,
+    name: [applicationData.firstName, applicationData.lastName].filter(Boolean).join(' '),
     firstName: applicationData.firstName,
     lastName: applicationData.lastName,
     phone: applicationData.phone,
@@ -354,7 +355,7 @@ export async function submitApplication(applicationData) {
     expectedSalary,
     salaryExpectation: expectedSalary,
     cvUrl: applicationData.cvUrl || null,
-    experience: applicationData.experience || [],
+    workHistory: applicationData.experience || [],  // renamed: keep array as workHistory
     skills: applicationData.skills || [],
     updatedAt: now,
     isMockData: false,
@@ -364,6 +365,12 @@ export async function submitApplication(applicationData) {
     lastAppliedOpeningCode: openingCode,
     lastAppliedAt: now
   };
+  // Guard: if candId looks like a Firebase UID (not a CAND-XXXXX code), discard it
+  // so we don't key the candidates document with the auth UID.
+  if (candId && !/^CAND-/i.test(candId)) {
+    console.warn('submitApplication: discarding non-CAND candidateId', candId);
+    candId = '';
+  }
   if (!candId) {
     try {
       candSnap = await withTimeout(getDocs(query(collection(db,'candidates'), where('email','==',email))), 'candidate lookup');

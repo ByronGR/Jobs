@@ -1505,8 +1505,10 @@ window.submitApp = async function() {
     openingTitle: opening.title || '',
     authUid: currentUser?.uid || authUser?.uid || null,
     ownerUid: currentUser?.uid || authUser?.uid || null,
-    candidateId: activeCandidate?.id || activeCandidate?.candidateId || '',
-    candidateCode: activeCandidate?.code || activeCandidate?.candidateCode || '',
+    // Only use a CAND-XXXXX code as the candidateId — never the Firebase Auth UID
+    // (activeCandidate.id is the users-collection doc key which IS the UID).
+    candidateId: activeCandidate?.candidateCode || activeCandidate?.code || activeCandidate?.candidateId || '',
+    candidateCode: activeCandidate?.candidateCode || activeCandidate?.code || '',
     email,
     firstName:  document.getElementById('f-first').value.trim(),
     lastName:   document.getElementById('f-last').value.trim(),

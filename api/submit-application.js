@@ -53,8 +53,9 @@ export default async function handler(req, res) {
     }
 
     const now = admin.firestore.FieldValue.serverTimestamp();
-    let candidateId = appData.candidateId || '';
-    let candidateCode = appData.candidateCode || '';
+    // Guard: reject Firebase Auth UIDs masquerading as CAND codes
+    let candidateId = /^CAND-/i.test(appData.candidateId || '') ? appData.candidateId : '';
+    let candidateCode = /^CAND-/i.test(appData.candidateCode || '') ? appData.candidateCode : '';
     let existingCandidate = null;
     const ownerUid = appData.ownerUid || appData.authUid || null;
     let existingUser = {};
@@ -111,6 +112,7 @@ export default async function handler(req, res) {
     const candidateProfile = {
       code: candidateCode,
       email,
+      name: [appData.firstName, appData.lastName].filter(Boolean).join(' '),
       firstName: appData.firstName || '',
       lastName: appData.lastName || '',
       phone: appData.phone || '',
@@ -122,7 +124,7 @@ export default async function handler(req, res) {
       expectedSalary: expectedSalaryLabel,
       salaryExpectation: expectedSalaryLabel,
       cvUrl: appData.cvUrl || null,
-      experience: Array.isArray(appData.experience) ? appData.experience : [],
+      workHistory: Array.isArray(appData.experience) ? appData.experience : [],  // keep array as workHistory
       skills: Array.isArray(appData.skills) ? appData.skills : [],
       status: 'applied',
       isMockData: false,

@@ -824,7 +824,28 @@ function App() {
           const profile = await fb.getCurrentUserProfile();
           if (alive) {
             setUser(profile || { email: firebaseUser.email, name: firebaseUser.displayName||'' });
-            setApplied(getAppliedSet(firebaseUser.uid));
+            // Build the applied set from Firestore (source of truth) rather than
+            // localStorage, so admin-deleted applications are reflected immediately.
+            const uid = firebaseUser.uid;
+            const localApplied = getAppliedSet(uid);
+            if (profile?.applications?.length) {
+              const fsApplied = new Set(
+                profile.applications.map(app => {
+                  const c = typeof app === 'string' ? app : (app?.openingCode || app?.opening || app?.code || '');
+                  return String(c).trim().toUpperCase();
+                }).filter(Boolean)
+              );
+              setApplied(fsApplied);
+              // Keep localStorage in sync so the badge is instant on next visit
+              try { localStorage.setItem('nw_jobs_applied_' + uid, JSON.stringify([...fsApplied])); } catch {}
+            } else if (profile) {
+              // Profile exists but no applications — clear any stale localStorage badge
+              setApplied(new Set());
+              try { localStorage.removeItem('nw_jobs_applied_' + uid); } catch {}
+            } else {
+              // No profile yet (brand-new account) — fall back to localStorage
+              setApplied(localApplied);
+            }
           }
         }
         // Load openings

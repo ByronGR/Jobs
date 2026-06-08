@@ -42,13 +42,15 @@ export function saveCandidateSession(candidate) {
   const displayName = candidate.name || candidate.displayName || '';
   const firstName = candidate.firstName || displayName.split(/\s+/)[0] || '';
   const lastName = candidate.lastName || displayName.split(/\s+/).slice(1).join(' ') || '';
+  // Always stamp authUid so getCandidateSession() can detect cross-user contamination.
+  const authUid = auth.currentUser?.uid || candidate.authUid || candidate.uid || '';
   localStorage.setItem(CANDIDATE_SESSION_KEY, JSON.stringify({
     id: candidate.id || '',
     code: candidate.code || '',
     email: candidate.email || '',
     firstName,
     lastName,
-    authUid: auth.currentUser?.uid || candidate.authUid || '',
+    authUid,
     loggedInAt: Date.now()
   }));
 }
@@ -57,6 +59,14 @@ export function getCandidateSession() {
   try {
     const saved = JSON.parse(localStorage.getItem(CANDIDATE_SESSION_KEY) || 'null');
     if (!saved?.email) return null;
+    // Guard against cross-user session contamination: if a different Firebase user
+    // is currently signed in, clear this stale session rather than returning it.
+    // This prevents "User A logged out, User B logs in, form still shows User A's data".
+    const currentUid = auth.currentUser?.uid;
+    if (currentUid && saved.authUid && saved.authUid !== currentUid) {
+      localStorage.removeItem(CANDIDATE_SESSION_KEY);
+      return null;
+    }
     return saved;
   } catch(e) {
     return null;

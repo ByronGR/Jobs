@@ -581,6 +581,7 @@ export async function submitApplication(applicationData) {
           name: candidateName,
           email,
           stage: 'applied',
+          pendingReview: true,       // held in Applicants inbox until a recruiter approves
           addedAt: new Date().toISOString(),
           source: 'jobs.nearwork.co',
           cvUrl: applicationData.cvUrl || null,

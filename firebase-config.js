@@ -67,6 +67,21 @@ export function clearCandidateSession() {
   localStorage.removeItem(CANDIDATE_SESSION_KEY);
 }
 
+// Clear all per-user cached data (applied set, etc.) for the given UID.
+// Called on sign-out so stale badges never survive a session end.
+export function clearUserCache(uid) {
+  try {
+    if (uid) localStorage.removeItem('nw_jobs_applied_' + uid);
+  } catch {}
+}
+
+// Subscribe to auth state changes. Returns an unsubscribe function.
+// Use this for a persistent listener that fires whenever the auth state
+// changes — including when an account is deleted externally.
+export function subscribeToAuthChanges(callback) {
+  return onAuthStateChanged(auth, callback);
+}
+
 export async function waitForAuthReady(ms = 3000) {
   await authPersistenceReady;
   if (auth.currentUser) return Promise.resolve(auth.currentUser);
@@ -304,7 +319,9 @@ export async function syncCandidateToHubSpot(candidate) {
 }
 
 export async function signOutCandidate() {
+  const uid = auth.currentUser?.uid;
   clearCandidateSession();
+  clearUserCache(uid);
   await signOut(auth);
 }
 

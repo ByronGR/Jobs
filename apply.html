@@ -511,7 +511,7 @@ input:focus,textarea:focus,select:focus{outline:none;}
 </div><!-- /nw-page -->
 
 <script type="module">
-import { getOpening, getCandidateByEmail, signInCandidate, signInCandidateWithGoogle, createCandidateAuth, submitApplication, uploadCV, getCandidateSession, saveCandidateSession, waitForAuthReady, hasAppliedToOpening, signOutCandidate, clearCandidateSession, getCurrentUserProfile, isCandidatePortalUser, syncCandidateToHubSpot } from './firebase-config.js';
+import { getOpening, getCandidateByEmail, signInCandidate, signInCandidateWithGoogle, createCandidateAuth, submitApplication, uploadCV, getCandidateSession, saveCandidateSession, waitForAuthReady, hasAppliedToOpening, signOutCandidate, clearCandidateSession, getCurrentUserProfile, isCandidatePortalUser, syncCandidateToHubSpot, subscribeToAuthChanges, clearUserCache } from './firebase-config.js';
 
 // ── Extract opening code from URL: /apply/open-csm-4x8b ──────────────────
 const pathParts = window.location.pathname.split('/').filter(Boolean);
@@ -1609,6 +1609,22 @@ window.submitApp = async function() {
     submitError.scrollIntoView({behavior:'smooth',block:'center'});
   }
 };
+
+// Persistent auth listener — if the account is deleted externally or
+// the session is revoked, reset to the login/start state immediately.
+subscribeToAuthChanges(firebaseUser => {
+  if (!firebaseUser) {
+    authUser = null;
+    activeCandidate = null;
+    clearCandidateSession();
+    try {
+      Object.keys(localStorage)
+        .filter(k => k.startsWith('nw_jobs_applied_'))
+        .forEach(k => localStorage.removeItem(k));
+    } catch {}
+    refreshLogoutButton();
+  }
+});
 
 // Start
 init();

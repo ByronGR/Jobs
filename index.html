@@ -165,13 +165,15 @@ import {
   getPublishedOpenings, getCandidateByEmail, signInCandidate, signInCandidateWithGoogle,
   getCandidateSession, saveCandidateSession, clearCandidateSession,
   waitForAuthReady, signOutCandidate, getCurrentUserProfile,
-  createNewCandidateAccount, createCandidateProfile, isCandidatePortalUser
+  createNewCandidateAccount, createCandidateProfile, isCandidatePortalUser,
+  subscribeToAuthChanges, clearUserCache,
 } from './firebase-config.js';
 window.__NWfb = {
   getPublishedOpenings, getCandidateByEmail, signInCandidate, signInCandidateWithGoogle,
   getCandidateSession, saveCandidateSession, clearCandidateSession,
   waitForAuthReady, signOutCandidate, getCurrentUserProfile,
   createNewCandidateAccount, createCandidateProfile, isCandidatePortalUser,
+  subscribeToAuthChanges, clearUserCache,
 };
 window.dispatchEvent(new CustomEvent('nw-firebase-ready'));
 </script>
@@ -842,6 +844,34 @@ function App() {
       }
     })();
     return () => { alive = false; };
+  }, []);
+
+  // Persistent auth listener — fires whenever Firebase auth state changes,
+  // including external account deletion. Ensures stale sessions are cleared
+  // even if the user is on the page when their account is removed.
+  useEffect(() => {
+    let unsub;
+    waitForFB().then(fb => {
+      if (!fb.subscribeToAuthChanges) return;
+      unsub = fb.subscribeToAuthChanges(firebaseUser => {
+        if (!firebaseUser) {
+          // Account deleted or session revoked externally
+          try { fb.clearCandidateSession?.(); } catch {}
+          try { fb.clearUserCache?.(null); } catch {}
+          // Also clear any uid-keyed applied storage we may still have cached
+          try {
+            Object.keys(localStorage)
+              .filter(k => k.startsWith('nw_jobs_applied_'))
+              .forEach(k => localStorage.removeItem(k));
+          } catch {}
+          setUser(null);
+          setApplied(new Set());
+          setView('browse');
+          setSelectedId(null);
+        }
+      });
+    });
+    return () => { try { unsub?.(); } catch {} };
   }, []);
 
   const isLoggedIn = !!user;

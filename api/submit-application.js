@@ -227,7 +227,7 @@ export default async function handler(req, res) {
     const safeOpeningCode = openingCode.replace(/[^\w-]/g, '_');
     const appId = `${candidateId}_${safeOpeningCode}`;
     const applicationPayload = {
-      candidateId: ownerUid || candidateId,
+      candidateId: candidateId,        // always the CAND-XXXXXX code, never a Firebase UID
       candidateDocId: candidateId,
       ownerUid,
       authUid: ownerUid,
@@ -283,10 +283,11 @@ export default async function handler(req, res) {
         const existingCandidates = Array.isArray(pipelineData.candidates) ? pipelineData.candidates : [];
         // candidateId is the Firestore document ID (CAND-XXXXX) — this is what
         // the ATS pipeline page uses to match candidates (c.candidateId === candidate.id).
-        const alreadyIn = existingCandidates.some(c =>
+        const alreadyInIdx = existingCandidates.findIndex(c =>
           c.candidateId === candidateId || c.candidateCode === candidateCode
         );
-        if (!alreadyIn) {
+        if (alreadyInIdx === -1) {
+          // New candidate — add a fresh entry tagged for the Applicants inbox.
           const pipelineEntry = {
             candidateId: candidateId,   // Firestore doc ID → matches candidate.id in ATS
             candidateCode,
@@ -302,6 +303,24 @@ export default async function handler(req, res) {
           };
           await pipelineDoc.ref.update({
             candidates: admin.firestore.FieldValue.arrayUnion(pipelineEntry),
+            updatedAt: now,
+          });
+        } else {
+          // Candidate already has a pipeline entry (e.g. from a previous deleted
+          // application or a re-submission). Restore pendingReview so they re-appear
+          // in the Applicants inbox, and refresh their CV + salary.
+          const updatedCandidates = existingCandidates.map((c, idx) => {
+            if (idx !== alreadyInIdx) return c;
+            return {
+              ...c,
+              pendingReview: true,
+              cvUrl: appData.cvUrl || c.cvUrl || null,
+              expectedSalary: expectedSalaryLabel || c.expectedSalary || '',
+              resubmittedAt: new Date().toISOString(),
+            };
+          });
+          await pipelineDoc.ref.update({
+            candidates: updatedCandidates,
             updatedAt: now,
           });
         }

@@ -348,8 +348,9 @@ export async function submitApplication(applicationData) {
     throw error;
   }
   let candSnap = null;
-  let candId = applicationData.candidateId || '';
-  let candCode = applicationData.candidateCode || '';
+  // Guard: only accept properly formatted CAND-XXXXXX codes from the start.
+  let candId = /^CAND-/i.test(applicationData.candidateId || '') ? applicationData.candidateId : '';
+  let candCode = /^CAND-/i.test(applicationData.candidateCode || '') ? applicationData.candidateCode : '';
   const userRef = doc(db, 'users', ownerUid);
   let existingUser = {};
   try {
@@ -358,8 +359,10 @@ export async function submitApplication(applicationData) {
   } catch(e) {
     console.warn('candidate user lookup skipped:', e.code || e.message);
   }
-  if (!candCode && (existingUser.candidateCode || existingUser.code)) {
-    candCode = existingUser.candidateCode || existingUser.code;
+  // Only use the stored code if it is a valid CAND code (not a Firebase UID).
+  const storedCode = existingUser.candidateCode || existingUser.code || '';
+  if (!candCode && /^CAND-/i.test(storedCode)) {
+    candCode = storedCode;
   }
   const candidateProfile = {
     email,
@@ -385,27 +388,42 @@ export async function submitApplication(applicationData) {
     lastAppliedOpeningCode: openingCode,
     lastAppliedAt: now
   };
-  // Guard: if candId looks like a Firebase UID (not a CAND-XXXXX code), discard it
-  // so we don't key the candidates document with the auth UID.
-  if (candId && !/^CAND-/i.test(candId)) {
-    console.warn('submitApplication: discarding non-CAND candidateId', candId);
-    candId = '';
-  }
   if (!candId) {
     try {
-      candSnap = await withTimeout(getDocs(query(collection(db,'candidates'), where('email','==',email))), 'candidate lookup');
-      if (candSnap.empty && rawEmail !== email) {
-        candSnap = await withTimeout(getDocs(query(collection(db,'candidates'), where('email','==',rawEmail))), 'candidate lookup');
+      // Search by email — only accept docs whose ID is a real CAND code.
+      // Legacy docs keyed by Firebase UID are skipped to force clean migration.
+      const snaps = await withTimeout(getDocs(query(collection(db,'candidates'), where('email','==',email))), 'candidate lookup');
+      const fallbackSnaps = (snaps.empty && rawEmail !== email)
+        ? await withTimeout(getDocs(query(collection(db,'candidates'), where('email','==',rawEmail))), 'candidate lookup')
+        : snaps;
+      for (const d of (fallbackSnaps.empty ? snaps : fallbackSnaps).docs) {
+        if (/^CAND-/i.test(d.id)) {
+          candId = d.id;
+          candCode = d.data().code || d.id;
+          break;
+        }
       }
     } catch(e) {
       console.warn('candidate lookup skipped during submit:', e.code || e.message);
     }
-    if (candSnap && !candSnap.empty) {
-      const ex = candSnap.docs[0];
-      candId = ex.id;
-      candCode = ex.data().code || ex.id;
+  }
+
+  // If no valid CAND code was found, generate one and patch the users doc so
+  // this account is properly migrated for all future submissions.
+  if (!candId) {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    candCode = 'CAND-' + Array.from({length:6}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
+    candId = candCode;
+    try {
+      await withTimeout(
+        setDoc(userRef, { candidateCode: candCode, code: candCode }, { merge: true }),
+        'cand code migration', 6000
+      );
+    } catch(e) {
+      console.warn('cand code migration skipped:', e.code || e.message);
     }
   }
+  candCode = candCode || candId;
 
   const appliedDate = new Date().toISOString().split('T')[0];
   const embeddedApplication = {

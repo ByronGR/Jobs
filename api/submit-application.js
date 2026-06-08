@@ -53,7 +53,9 @@ export default async function handler(req, res) {
     }
 
     const now = admin.firestore.FieldValue.serverTimestamp();
-    // Guard: reject Firebase Auth UIDs masquerading as CAND codes
+    // Guard: only accept properly formatted CAND-XXXXXX codes.
+    // Firebase Auth UIDs and other strings are discarded so we never key
+    // a candidates document with a raw UID.
     let candidateId = /^CAND-/i.test(appData.candidateId || '') ? appData.candidateId : '';
     let candidateCode = /^CAND-/i.test(appData.candidateCode || '') ? appData.candidateCode : '';
     let existingCandidate = null;
@@ -71,8 +73,10 @@ export default async function handler(req, res) {
     if (ownerUid) {
       const userSnap = await db.collection('users').doc(ownerUid).get();
       if (userSnap.exists) existingUser = userSnap.data() || {};
-      if (!candidateCode && (existingUser.candidateCode || existingUser.code)) {
-        candidateCode = existingUser.candidateCode || existingUser.code;
+      // Only use the stored code if it is a valid CAND code (not a Firebase UID).
+      const storedCode = existingUser.candidateCode || existingUser.code || '';
+      if (!candidateCode && /^CAND-/i.test(storedCode)) {
+        candidateCode = storedCode;
       }
     }
 
@@ -82,18 +86,32 @@ export default async function handler(req, res) {
     }
 
     if (!existingCandidate) {
-      const byEmail = await db.collection('candidates').where('email', '==', email).limit(1).get();
-      if (!byEmail.empty) {
-        const doc = byEmail.docs[0];
-        existingCandidate = { id: doc.id, ...doc.data() };
-        candidateId = doc.id;
-        candidateCode = doc.data().code || doc.id;
+      // Search by email — only accept docs whose ID is a real CAND code.
+      // Docs keyed by Firebase UID (legacy broken accounts) are skipped so we
+      // generate a fresh CAND code and migrate cleanly.
+      const byEmail = await db.collection('candidates').where('email', '==', email).limit(5).get();
+      for (const d of byEmail.docs) {
+        if (/^CAND-/i.test(d.id)) {
+          existingCandidate = { id: d.id, ...d.data() };
+          candidateId = d.id;
+          candidateCode = d.data().code || d.id;
+          break;
+        }
       }
     }
 
     if (!candidateId) {
+      // No valid CAND record found — generate a fresh code and auto-migrate this
+      // account so future submissions use the proper CAND-XXXXXX key.
       candidateCode = candidateCode || makeCandidateCode();
       candidateId = candidateCode;
+      // Patch the users doc so the candidate carries a valid code going forward.
+      if (ownerUid) {
+        await db.collection('users').doc(ownerUid).set(
+          { candidateCode, code: candidateCode },
+          { merge: true }
+        ).catch(() => null);
+      }
     }
     candidateCode = candidateCode || candidateId;
 

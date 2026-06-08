@@ -261,6 +261,7 @@ export default async function handler(req, res) {
     await db.collection('applications').doc(appId).set(applicationPayload, { merge: true });
 
     // ── Add candidate to the pipeline so they appear in the ATS board ─────────
+    let pipelineResult = { ok: false, reason: 'not_attempted' };
     try {
       // Strategy: try query-by-code first; fall back to doc-ID lookup.
       // Older pipelines may not have a code field, but their doc ID IS the code.
@@ -305,6 +306,7 @@ export default async function handler(req, res) {
             candidates: admin.firestore.FieldValue.arrayUnion(pipelineEntry),
             updatedAt: now,
           });
+          pipelineResult = { ok: true, action: 'added', pipelineId: pipelineDoc.id, candidateId };
         } else {
           // Candidate already has a pipeline entry (e.g. from a previous deleted
           // application or a re-submission). Restore pendingReview so they re-appear
@@ -323,12 +325,15 @@ export default async function handler(req, res) {
             candidates: updatedCandidates,
             updatedAt: now,
           });
+          pipelineResult = { ok: true, action: 'upserted', pipelineId: pipelineDoc.id, candidateId };
         }
       } else {
         console.warn('Pipeline update skipped: no pipeline found for', openingCode);
+        pipelineResult = { ok: false, reason: 'no_pipeline_found', openingCode };
       }
     } catch (pipelineErr) {
       console.warn('Pipeline update skipped:', pipelineErr.message);
+      pipelineResult = { ok: false, reason: 'exception', error: pipelineErr.message };
     }
 
     await db.collection('audit_logs').add({
@@ -367,6 +372,7 @@ export default async function handler(req, res) {
       candCode: candidateCode,
       candId: candidateId,
       appId,
+      pipeline: pipelineResult,
       email: emailResult,
       hubspot: hubspotResult
     });

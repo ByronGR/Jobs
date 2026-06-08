@@ -260,81 +260,9 @@ export default async function handler(req, res) {
 
     await db.collection('applications').doc(appId).set(applicationPayload, { merge: true });
 
-    // ── Add candidate to the pipeline so they appear in the ATS board ─────────
-    let pipelineResult = { ok: false, reason: 'not_attempted' };
-    try {
-      // Strategy: try query-by-code first; fall back to doc-ID lookup.
-      // Older pipelines may not have a code field, but their doc ID IS the code.
-      let pipelineDoc = null;
-      const pipelineSnap = await db.collection('pipelines')
-        .where('code', '==', openingCode)
-        .limit(1)
-        .get();
-      if (!pipelineSnap.empty) {
-        pipelineDoc = pipelineSnap.docs[0];
-      } else {
-        // Fallback: pipeline doc ID equals the opening code for all pipelines
-        // created via the kickoff flow, even if the code field was not indexed.
-        const byId = await db.collection('pipelines').doc(openingCode).get();
-        if (byId.exists) pipelineDoc = byId;
-      }
-
-      if (pipelineDoc) {
-        const pipelineData = pipelineDoc.data() || {};
-        const existingCandidates = Array.isArray(pipelineData.candidates) ? pipelineData.candidates : [];
-        // candidateId is the Firestore document ID (CAND-XXXXX) — this is what
-        // the ATS pipeline page uses to match candidates (c.candidateId === candidate.id).
-        const alreadyInIdx = existingCandidates.findIndex(c =>
-          c.candidateId === candidateId || c.candidateCode === candidateCode
-        );
-        if (alreadyInIdx === -1) {
-          // New candidate — add a fresh entry tagged for the Applicants inbox.
-          const pipelineEntry = {
-            candidateId: candidateId,   // Firestore doc ID → matches candidate.id in ATS
-            candidateCode,
-            name: applicationPayload.candidateName,
-            email,
-            stage: 'applied',
-            pendingReview: true,        // held in Applicants inbox until a recruiter approves
-            addedAt: new Date().toISOString(),
-            source: 'jobs.nearwork.co',
-            cvUrl: appData.cvUrl || null,
-            skills: Array.isArray(appData.skills) ? appData.skills : [],
-            expectedSalary: expectedSalaryLabel,
-          };
-          await pipelineDoc.ref.update({
-            candidates: admin.firestore.FieldValue.arrayUnion(pipelineEntry),
-            updatedAt: now,
-          });
-          pipelineResult = { ok: true, action: 'added', pipelineId: pipelineDoc.id, candidateId };
-        } else {
-          // Candidate already has a pipeline entry (e.g. from a previous deleted
-          // application or a re-submission). Restore pendingReview so they re-appear
-          // in the Applicants inbox, and refresh their CV + salary.
-          const updatedCandidates = existingCandidates.map((c, idx) => {
-            if (idx !== alreadyInIdx) return c;
-            return {
-              ...c,
-              pendingReview: true,
-              cvUrl: appData.cvUrl || c.cvUrl || null,
-              expectedSalary: expectedSalaryLabel || c.expectedSalary || '',
-              resubmittedAt: new Date().toISOString(),
-            };
-          });
-          await pipelineDoc.ref.update({
-            candidates: updatedCandidates,
-            updatedAt: now,
-          });
-          pipelineResult = { ok: true, action: 'upserted', pipelineId: pipelineDoc.id, candidateId };
-        }
-      } else {
-        console.warn('Pipeline update skipped: no pipeline found for', openingCode);
-        pipelineResult = { ok: false, reason: 'no_pipeline_found', openingCode };
-      }
-    } catch (pipelineErr) {
-      console.warn('Pipeline update skipped:', pipelineErr.message);
-      pipelineResult = { ok: false, reason: 'exception', error: pipelineErr.message };
-    }
+    // Pipeline is NOT touched on apply. The candidate lives in the `applications`
+    // collection only until a Nearwork recruiter approves them in the Admin
+    // Applicants inbox — at which point they are added to `pipeline.candidates`.
 
     await db.collection('audit_logs').add({
       action: 'candidate_applied',
@@ -372,7 +300,6 @@ export default async function handler(req, res) {
       candCode: candidateCode,
       candId: candidateId,
       appId,
-      pipeline: pipelineResult,
       email: emailResult,
       hubspot: hubspotResult
     });

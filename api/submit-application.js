@@ -397,6 +397,7 @@ async function syncCandidateToHubSpot(candidate) {
     jobtitle: candidate.role,
     company: 'Nearwork Candidate',
     website: candidate.profileUrl,
+    type: 'Candidate',
     nearwork_contact_type: 'candidate',
     nearwork_portal_type: 'talent',
     nearwork_candidate_code: candidate.code,

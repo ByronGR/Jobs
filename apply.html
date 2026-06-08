@@ -511,7 +511,7 @@ input:focus,textarea:focus,select:focus{outline:none;}
 </div><!-- /nw-page -->
 
 <script type="module">
-import { getOpening, getCandidateByEmail, signInCandidate, signInCandidateWithGoogle, createCandidateAuth, submitApplication, uploadCV, getCandidateSession, saveCandidateSession, waitForAuthReady, hasAppliedToOpening, signOutCandidate, clearCandidateSession, getCurrentUserProfile, isCandidatePortalUser, syncCandidateToHubSpot, subscribeToAuthChanges, clearUserCache } from './firebase-config.js';
+import { getOpening, getCandidateByEmail, signInCandidate, signInCandidateWithGoogle, createCandidateAuth, submitApplication, uploadCV, getCandidateSession, saveCandidateSession, waitForAuthReady, hasAppliedToOpening, signOutCandidate, clearCandidateSession, getCurrentUserProfile, isCandidatePortalUser, syncCandidateToHubSpot, subscribeToAuthChanges, clearUserCache, reloadCurrentUser } from './firebase-config.js';
 
 // ── Extract opening code from URL: /apply/open-csm-4x8b ──────────────────
 const pathParts = window.location.pathname.split('/').filter(Boolean);
@@ -563,6 +563,10 @@ function showAuthMessage(containerId, message) {
 
 async function refreshLogoutButton() {
   const user = await waitForAuthReady(3000);
+  // Fire-and-forget: detect externally-deleted accounts immediately.
+  // If the account is gone, reloadCurrentUser() triggers onAuthStateChanged(null),
+  // which the persistent listener below catches and resets the page.
+  try { reloadCurrentUser(); } catch {}
   const logoutBtn = document.getElementById('logout-btn');
   const accountBtn = document.querySelector('.opening-actions .btn-secondary');
   if (logoutBtn) logoutBtn.style.display = user ? 'inline-flex' : 'none';
@@ -1536,13 +1540,15 @@ window.submitApp = async function() {
   }
   let cvUrl = existingCvUrl;
 
-  // Upload CV first
+  // Upload CV first — use the candidate's UID as the storage path so it's
+  // traceable in Firebase Storage and matches security rule expectations.
   if (cvFile) {
     try {
-      const tempCode = 'TEMP-' + Date.now();
-      cvUrl = await uploadCV(cvFile, tempCode);
+      const cvPath = currentUser?.uid || activeCandidate?.candidateCode || ('upload-' + Date.now());
+      cvUrl = await uploadCV(cvFile, cvPath);
     } catch(e) {
       console.error('CV upload failed:', e);
+      // Non-fatal: submission proceeds without a CV; user can upload later in Talent portal
     }
   }
 

@@ -82,6 +82,24 @@ export function subscribeToAuthChanges(callback) {
   return onAuthStateChanged(auth, callback);
 }
 
+// Force a server-side reload of the current user's Firebase Auth token.
+// If the account was deleted in Firebase Console, calling reload() causes
+// the SDK to immediately fire onAuthStateChanged(null) rather than waiting
+// up to 1 hour for the refresh token to naturally expire.
+// Fire-and-forget — the persistent subscribeToAuthChanges listener handles cleanup.
+export function reloadCurrentUser() {
+  const user = auth.currentUser;
+  if (user) {
+    user.reload().catch(e => {
+      // auth/user-not-found, auth/user-disabled, etc. — sign out right now
+      const code = (e.code || '').toString();
+      if (code.startsWith('auth/') && code !== 'auth/network-request-failed') {
+        signOut(auth).catch(() => {});
+      }
+    });
+  }
+}
+
 export async function waitForAuthReady(ms = 3000) {
   await authPersistenceReady;
   if (auth.currentUser) return Promise.resolve(auth.currentUser);
@@ -599,11 +617,21 @@ export async function submitApplication(applicationData) {
 
   // ── Add candidate to the pipeline so they appear in the ATS Applied column ──
   try {
+    // Try query-by-code first; fall back to document-ID lookup so older pipelines
+    // (without a code field) are still found.
+    let pipelineDocSnap = null;
     const pipelineQ = query(collection(db, 'pipelines'), where('code', '==', openingCode));
     const pipelineSnap = await withTimeout(getDocs(pipelineQ), 'pipeline lookup', 6000);
     if (!pipelineSnap.empty) {
-      const pipelineDoc = pipelineSnap.docs[0];
-      const pipelineData = pipelineDoc.data() || {};
+      pipelineDocSnap = pipelineSnap.docs[0];
+    } else {
+      // Pipeline doc ID equals the opening code in all kickoff-created pipelines
+      const byId = await withTimeout(getDoc(doc(db, 'pipelines', openingCode)), 'pipeline id lookup', 4000);
+      if (byId.exists()) pipelineDocSnap = byId;
+    }
+
+    if (pipelineDocSnap) {
+      const pipelineData = pipelineDocSnap.data() || {};
       const existingCandidates = Array.isArray(pipelineData.candidates) ? pipelineData.candidates : [];
       const alreadyIn = existingCandidates.some(c =>
         c.candidateId === candId || c.candidateCode === candCode
@@ -624,13 +652,15 @@ export async function submitApplication(applicationData) {
           expectedSalary,
         };
         await withTimeout(
-          updateDoc(doc(db, 'pipelines', pipelineDoc.id), {
+          updateDoc(doc(db, 'pipelines', pipelineDocSnap.id), {
             candidates: [...existingCandidates, pipelineEntry],
             updatedAt: serverTimestamp(),
           }),
           'pipeline update', 6000
         );
       }
+    } else {
+      console.warn('pipeline update skipped: no pipeline found for', openingCode);
     }
   } catch(e) {
     console.warn('pipeline update skipped:', e.code || e.message);

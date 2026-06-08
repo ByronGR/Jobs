@@ -262,12 +262,23 @@ export default async function handler(req, res) {
 
     // ── Add candidate to the pipeline so they appear in the ATS board ─────────
     try {
+      // Strategy: try query-by-code first; fall back to doc-ID lookup.
+      // Older pipelines may not have a code field, but their doc ID IS the code.
+      let pipelineDoc = null;
       const pipelineSnap = await db.collection('pipelines')
         .where('code', '==', openingCode)
         .limit(1)
         .get();
       if (!pipelineSnap.empty) {
-        const pipelineDoc = pipelineSnap.docs[0];
+        pipelineDoc = pipelineSnap.docs[0];
+      } else {
+        // Fallback: pipeline doc ID equals the opening code for all pipelines
+        // created via the kickoff flow, even if the code field was not indexed.
+        const byId = await db.collection('pipelines').doc(openingCode).get();
+        if (byId.exists) pipelineDoc = byId;
+      }
+
+      if (pipelineDoc) {
         const pipelineData = pipelineDoc.data() || {};
         const existingCandidates = Array.isArray(pipelineData.candidates) ? pipelineData.candidates : [];
         // candidateId is the Firestore document ID (CAND-XXXXX) — this is what
@@ -294,6 +305,8 @@ export default async function handler(req, res) {
             updatedAt: now,
           });
         }
+      } else {
+        console.warn('Pipeline update skipped: no pipeline found for', openingCode);
       }
     } catch (pipelineErr) {
       console.warn('Pipeline update skipped:', pipelineErr.message);
@@ -503,28 +516,71 @@ async function hasApplied({ db, uid, email, openingCode }) {
 }
 
 async function sendResendEmail({ to, candidateName, openingTitle, openingCode, candidateCode }) {
-  // Use the Admin email API so candidates receive the full branded HTML template
-  // (the same beautiful design as account_created — built by buildApplicationSubmittedHtml).
-  const adminApiUrl = process.env.EMAIL_API_URL || 'https://admin.nearwork.co/api/send-email';
   const firstName = String(candidateName || 'there').trim().split(/\s+/)[0] || 'there';
+  const roleTitle = openingTitle || openingCode || 'this role';
+
+  // Prefer a direct Resend call using the Jobs-function RESEND_API_KEY.
+  // Fall back to the Admin API proxy (EMAIL_API_URL) if no key is set here.
+  const directKey = process.env.RESEND_API_KEY;
+  if (directKey) {
+    const from = process.env.RESEND_FROM || 'Nearwork <support@nearwork.co>';
+    const subject = `We received your application — ${roleTitle}`;
+    const html = buildJobAppliedEmailHtml(firstName, roleTitle);
+    const resendRes = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${directKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from, to: [to], subject, html })
+    });
+    const data = await resendRes.json().catch(() => ({}));
+    if (!resendRes.ok) return { sent: false, via: 'resend-direct', error: data };
+    return { sent: true, via: 'resend-direct', id: data.id };
+  }
+
+  // Fallback: call the Admin branded-email API (handles Resend key centrally).
+  const adminApiUrl = process.env.EMAIL_API_URL || 'https://admin.nearwork.co/api/send-email';
   const response = await fetch(adminApiUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       to,
       templateId: 'job_applied',
-      data: {
-        firstName,
-        name: candidateName || 'there',
-        roleTitle: openingTitle || openingCode || 'this role',
-        openingCode: openingCode || '',
-        actionUrl: 'https://talent.nearwork.co'
-      }
+      data: { firstName, name: candidateName || 'there', roleTitle, openingCode: openingCode || '', actionUrl: 'https://talent.nearwork.co' }
     })
   });
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) return { sent: false, error: data };
-  return { sent: true, id: data.id };
+  if (!response.ok) return { sent: false, via: 'admin-api', error: data };
+  return { sent: true, via: 'admin-api', id: data.id };
+}
+
+function buildJobAppliedEmailHtml(firstName, roleTitle) {
+  const sf = escapeHtml(firstName || 'there');
+  const sr = escapeHtml(roleTitle || 'this role');
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#F5F4F0;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:40px 16px;">
+<table width="580" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06);">
+<tr><td style="padding:32px 40px 0">
+  <span style="font-size:22px;font-weight:700;color:#111;letter-spacing:-.03em;">Nearwork</span>
+  <div style="width:68px;height:3px;background:#16A085;border-radius:2px;margin-top:4px;"></div>
+</td></tr>
+<tr><td style="padding:20px 40px 0"><div style="height:4px;border-radius:2px;background:linear-gradient(90deg,#16A085 0%,#AF7AC5 60%,#E74C7C 100%);"></div></td></tr>
+<tr><td style="padding:36px 40px 40px;background:#fff;">
+  <p style="font-size:40px;margin:0 0 16px;">&#128233;</p>
+  <h1 style="font-size:26px;font-weight:700;color:#111;margin:0 0 14px;">We got your application, ${sf}.</h1>
+  <p style="font-size:15px;color:#555;line-height:1.7;margin:0 0 10px;">Thanks for applying for the <strong style="color:#111;">${sr}</strong> role. Our team will review your experience and be in touch soon.</p>
+  <p style="font-size:15px;color:#555;line-height:1.7;margin:0 0 32px;">In the meantime, log in to your portal to track your application. &#128064;</p>
+  <table cellpadding="0" cellspacing="0" style="margin-bottom:32px;"><tr><td style="background:#E8F8F5;border-radius:999px;padding:8px 20px;">
+    <span style="font-size:13px;font-weight:600;color:#16A085;">&#128188; ${sr}</span>
+  </td></tr></table>
+  <table cellpadding="0" cellspacing="0"><tr><td style="border-radius:6px;background:#16A085;">
+    <a href="https://talent.nearwork.co" style="display:inline-block;font-size:14px;font-weight:600;color:#fff;text-decoration:none;padding:13px 30px;">Track your application &#8594;</a>
+  </td></tr></table>
+</td></tr>
+<tr><td style="background:#F5F4F0;border-top:1px solid #EBEBEB;border-radius:0 0 12px 12px;padding:24px 40px;">
+  <p style="font-size:12px;color:#9E9E9E;margin:0;">Questions? <a href="mailto:support@nearwork.co" style="color:#16A085;text-decoration:none;">support@nearwork.co</a></p>
+</td></tr>
+</table></td></tr></table>
+</body></html>`;
 }
 
 function escapeHtml(value) {

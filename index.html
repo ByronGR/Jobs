@@ -166,14 +166,14 @@ import {
   getCandidateSession, saveCandidateSession, clearCandidateSession,
   waitForAuthReady, signOutCandidate, getCurrentUserProfile,
   createNewCandidateAccount, createCandidateProfile, isCandidatePortalUser,
-  subscribeToAuthChanges, clearUserCache,
+  subscribeToAuthChanges, clearUserCache, reloadCurrentUser,
 } from './firebase-config.js';
 window.__NWfb = {
   getPublishedOpenings, getCandidateByEmail, signInCandidate, signInCandidateWithGoogle,
   getCandidateSession, saveCandidateSession, clearCandidateSession,
   waitForAuthReady, signOutCandidate, getCurrentUserProfile,
   createNewCandidateAccount, createCandidateProfile, isCandidatePortalUser,
-  subscribeToAuthChanges, clearUserCache,
+  subscribeToAuthChanges, clearUserCache, reloadCurrentUser,
 };
 window.dispatchEvent(new CustomEvent('nw-firebase-ready'));
 </script>
@@ -815,6 +815,12 @@ function App() {
             if (alive) setPortalMismatch(true);
             return;
           }
+          // Fire-and-forget: force a server-side token refresh so the SDK
+          // immediately discovers externally-deleted accounts rather than
+          // waiting up to 1 hour for the JWT to expire naturally.
+          // If the account is gone, this triggers onAuthStateChanged(null)
+          // which the persistent listener below handles.
+          try { fb.reloadCurrentUser?.(); } catch {}
           const profile = await fb.getCurrentUserProfile();
           if (alive) {
             setUser(profile || { email: firebaseUser.email, name: firebaseUser.displayName||'' });

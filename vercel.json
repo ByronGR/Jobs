@@ -1,6 +1,7 @@
 {
   "functions": {
-    "api/*.js": { "maxDuration": 30 }
+    "api/*.js":             { "maxDuration": 30 },
+    "api/parse-cv.js":      { "maxDuration": 60 }
   },
   "cleanUrls": true,
   "trailingSlash": false,

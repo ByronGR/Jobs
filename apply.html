@@ -163,6 +163,12 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);-webkit-font-
 .cv-pname{font-size:13px;font-weight:600;color:var(--accent-dark);flex:1;}
 .cv-rem{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px 5px;}
 
+/* CV autofill hint */
+.cv-autofill-hint{font-size:12px;font-weight:600;margin-top:8px;min-height:16px;line-height:1.5;}
+.cv-autofill-hint.parsing{color:var(--muted);}
+.cv-autofill-hint.done{color:var(--accent-dark);}
+.cv-autofill-hint.error{color:var(--red);}
+
 /* Experience card */
 .exp-card{background:#fff;border:1.5px solid var(--border);border-radius:14px;padding:20px;margin-bottom:14px;}
 .exp-num{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:14px;}
@@ -421,6 +427,7 @@ input:focus,textarea:focus,select:focus{outline:none;}
           </div>
           <input type="file" id="cv-input" accept=".pdf,.doc,.docx" style="display:none;" onchange="cvPicked(this)">
           <div class="cv-preview" id="cv-preview"><span style="font-size:18px;">📄</span><span class="cv-pname" id="cv-pname"></span><button class="cv-rem" onclick="cvRemove()">✕</button></div>
+          <div class="cv-autofill-hint" id="cv-autofill-hint"></div>
           <div class="ferr" id="err-cv">Please upload your CV</div>
         </div>
         <div class="form-nav"><div class="step-info">Step 1 of 3</div><button class="btn-next" onclick="goStep(2)">Continue →</button></div>
@@ -1296,8 +1303,116 @@ function handleCV(file) {
   cvFile = file;
   document.getElementById('cv-pname').textContent = file.name;
   document.getElementById('cv-preview').classList.add('show');
+  parseCvAndFill(file);
 }
-window.cvRemove = () => { cvFile = null; existingCvUrl = null; document.getElementById('cv-input').value=''; document.getElementById('cv-preview').classList.remove('show'); };
+window.cvRemove = () => {
+  cvFile = null; existingCvUrl = null;
+  document.getElementById('cv-input').value = '';
+  document.getElementById('cv-preview').classList.remove('show');
+  const hint = document.getElementById('cv-autofill-hint');
+  if (hint) { hint.textContent = ''; hint.className = 'cv-autofill-hint'; }
+};
+
+// ── Affinda CV autofill ───────────────────────────────────────────────────
+async function parseCvAndFill(file) {
+  const hint = document.getElementById('cv-autofill-hint');
+  const setHint = (text, state) => {
+    if (!hint) return;
+    hint.textContent = text;
+    hint.className = 'cv-autofill-hint' + (state ? ' ' + state : '');
+  };
+  setHint('⏳ Analysing your CV — this takes up to 30 seconds…', 'parsing');
+  try {
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload  = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    const resp = await fetch('/api/parse-cv', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ data: base64, filename: file.name, mimeType: file.type || 'application/octet-stream' }),
+    });
+    if (!resp.ok) throw new Error('api-error');
+    const json = await resp.json();
+    if (!json.ok) throw new Error('parse-failed');
+    const filled = applyParsedToForm(json);
+    setHint(
+      filled.length
+        ? `✓ Pre-filled from CV: ${filled.join(', ')}. Review before continuing.`
+        : '✓ CV analysed. Fill in any missing details below.',
+      'done'
+    );
+  } catch {
+    setHint('', '');   // silent fail — user can fill manually
+  }
+}
+
+function applyParsedToForm(p) {
+  const filled = [];
+  const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+
+  // ── Section 1: Profile ──────────────────────────────────────────────────
+  if (p.name) {
+    const parts = p.name.trim().split(/\s+/);
+    const first = parts[0] || '';
+    const last  = parts.slice(1).join(' ') || '';
+    const fEl = document.getElementById('f-first');
+    const lEl = document.getElementById('f-last');
+    if (first && fEl && !fEl.value) fEl.value = first;
+    if (last  && lEl && !lEl.value) lEl.value = last;
+    if (first || last) filled.push('name');
+  }
+  if (p.phone) {
+    const pEl = document.getElementById('f-phone');
+    if (pEl && !pEl.value) { pEl.value = p.phone; filled.push('phone'); }
+  }
+  // Try to match city from the dropdown options
+  if (p.city) {
+    const cityEl = document.getElementById('f-city');
+    if (cityEl && !cityEl.value) {
+      const norm = (s) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+      const cityNorm = norm(p.city);
+      const match = [...cityEl.options].find((o) => o.value && norm(o.value).split(/[, ]/)[0] && cityNorm.includes(norm(o.value).split(/[, ]/)[0]));
+      if (match) { cityEl.value = match.value; filled.push('city'); }
+    }
+  }
+
+  // ── Section 2: Work experience (positions 1 and 2) ──────────────────────
+  const work = Array.isArray(p.workHistory) ? p.workHistory : [];
+  const fillWork = (prefix, w) => {
+    set(prefix + '-co',    w.company);
+    set(prefix + '-title', w.title);
+    set(prefix + '-from',  w.from);
+    if (w.to === 'present') {
+      const cb = document.getElementById(prefix + '-curr');
+      if (cb) { cb.checked = true; toggleCurr(prefix); }
+    } else {
+      set(prefix + '-to', w.to);
+    }
+  };
+  if (work[0]) { fillWork('e1', work[0]); filled.push(`${work.length} role${work.length !== 1 ? 's' : ''}`); }
+  if (work[1]) fillWork('e2', work[1]);
+
+  // ── Section 2: Skills — match parsed skills against SKILLS catalog ───────
+  if (Array.isArray(p.skills) && p.skills.length > 0 && selectedSkills.size === 0) {
+    const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const parsedNorms = p.skills.map(norm);
+    const matched = SKILLS.filter((s) => {
+      const sn = norm(s);
+      return parsedNorms.some((pn) => sn.includes(pn) || pn.includes(sn));
+    }).slice(0, 5);
+    if (matched.length > 0) {
+      selectedSkills = new Set(matched);
+      document.getElementById('skills-count').textContent = selectedSkills.size;
+      renderSkills();
+      filled.push(`${matched.length} skill${matched.length !== 1 ? 's' : ''}`);
+    }
+  }
+
+  return filled;
+}
 
 // ── Experience ────────────────────────────────────────────────────────────
 window.toggleCurr = prefix => {

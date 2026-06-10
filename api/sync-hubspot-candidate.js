@@ -63,6 +63,7 @@ export default async function handler(req, res) {
     city: candidate.city || candidate.location,
     jobtitle: candidate.role,
     company: 'Nearwork Candidate',
+    type: 'Candidate',
     nearwork_contact_type: 'candidate',
     nearwork_portal_type: 'jobs',
     nearwork_candidate_code: candidate.code || candidate.candidateCode,

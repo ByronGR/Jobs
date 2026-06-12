@@ -1342,8 +1342,9 @@ async function parseCvAndFill(file) {
         : '✓ CV analysed. Fill in any missing details below.',
       'done'
     );
-  } catch {
-    setHint('', '');   // silent fail — user can fill manually
+  } catch (e) {
+    console.error('[parse-cv] failed:', e);
+    setHint('⚠ Could not analyse your CV automatically — please fill in your details below.', 'error');
   }
 }
 

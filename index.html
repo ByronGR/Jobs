@@ -204,7 +204,7 @@ function mapOpening(op) {
   const cur = op.currency || op.salaryCurrency || 'USD';
   const sym = cur === 'COP' ? 'COP ' : '$';
   const salMin = parseInt(op.salaryMin)||0, salMax = parseInt(op.salaryMax)||0;
-  const salary = (salMin && salMax) ? `${sym}${salMin.toLocaleString()} – ${sym}${salMax.toLocaleString()} /mo` : 'Salary on request';
+  const salary = (!op.hideSalary && salMin && salMax) ? `${sym}${salMin.toLocaleString()} – ${sym}${salMax.toLocaleString()} /mo` : 'Salary on request';
   const posted = op.createdAt?.toDate
     ? op.createdAt.toDate().toLocaleDateString('en-US',{month:'short',day:'numeric'})
     : op.createdAt ? new Date(op.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';

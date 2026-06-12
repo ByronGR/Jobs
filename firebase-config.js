@@ -377,8 +377,15 @@ export async function submitApplication(applicationData) {
   const rawEmail = applicationData.email.trim();
   const email = rawEmail.toLowerCase();
   const now = serverTimestamp();
-  const expectedSalaryAmount = Number(applicationData.expectedSalaryAmount || applicationData.salaryExpectationAmount || 0);
-  const expectedSalaryCurrency = String(applicationData.expectedSalaryCurrency || applicationData.salaryCurrency || 'USD').toUpperCase() === 'COP' ? 'COP' : 'USD';
+  const expectedSalaryUSD = applicationData.expectedSalaryUSD != null && applicationData.expectedSalaryUSD !== '' ? Number(applicationData.expectedSalaryUSD) : null;
+  const expectedSalaryCOP = applicationData.expectedSalaryCOP != null && applicationData.expectedSalaryCOP !== '' ? Number(applicationData.expectedSalaryCOP) : null;
+  // Legacy single amount+currency fields, kept for Admin's existing candidate views
+  const expectedSalaryAmount = expectedSalaryUSD || expectedSalaryCOP || Number(applicationData.expectedSalaryAmount || applicationData.salaryExpectationAmount || 0);
+  const expectedSalaryCurrency = expectedSalaryUSD
+    ? 'USD'
+    : expectedSalaryCOP
+      ? 'COP'
+      : (String(applicationData.expectedSalaryCurrency || applicationData.salaryCurrency || 'USD').toUpperCase() === 'COP' ? 'COP' : 'USD');
   const expectedSalary = expectedSalaryAmount
     ? `${expectedSalaryCurrency} ${Math.round(expectedSalaryAmount).toLocaleString('en-US')}/mo`
     : '';
@@ -418,6 +425,9 @@ export async function submitApplication(applicationData) {
     city: applicationData.city,
     english: applicationData.english,
     linkedin: applicationData.linkedin || '',
+    currentRole: applicationData.currentRole || '',
+    expectedSalaryUSD,
+    expectedSalaryCOP,
     expectedSalaryAmount,
     expectedSalaryCurrency,
     expectedSalary,
@@ -425,6 +435,8 @@ export async function submitApplication(applicationData) {
     cvUrl: applicationData.cvUrl || null,
     workHistory: applicationData.experience || [],  // renamed: keep array as workHistory
     skills: applicationData.skills || [],
+    languages: applicationData.languages || [],
+    certifications: applicationData.certifications || [],
     updatedAt: now,
     isMockData: false,
     source: 'jobs.nearwork.co',
@@ -539,6 +551,9 @@ export async function submitApplication(applicationData) {
     english: applicationData.english,
     englishLevel: applicationData.english,
     linkedin: applicationData.linkedin || '',
+    currentRole: applicationData.currentRole || '',
+    expectedSalaryUSD,
+    expectedSalaryCOP,
     expectedSalaryAmount,
     expectedSalaryCurrency,
     expectedSalary,
@@ -548,6 +563,8 @@ export async function submitApplication(applicationData) {
     cvUrl: applicationData.cvUrl || null,
     skills: applicationData.skills || [],
     experience: applicationData.experience || [],
+    languages: applicationData.languages || [],
+    certifications: applicationData.certifications || [],
     applications: nextApplications,
     status: existingUser.status || 'active',
     source: existingUser.source || 'jobs.nearwork.co',
@@ -579,6 +596,11 @@ export async function submitApplication(applicationData) {
     clientName:'Nearwork client',
     experience:applicationData.experience,
     skills:applicationData.skills,
+    languages: applicationData.languages || [],
+    certifications: applicationData.certifications || [],
+    currentRole: applicationData.currentRole || '',
+    expectedSalaryUSD,
+    expectedSalaryCOP,
     expectedSalaryAmount,
     expectedSalaryCurrency,
     expectedSalary,

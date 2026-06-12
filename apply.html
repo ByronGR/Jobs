@@ -107,6 +107,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);-webkit-font-
 .field label .req{color:var(--red);}
 .field input,.field select,.field textarea{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:var(--sans);color:var(--ink);background:#fff;outline:none;transition:border-color .2s,box-shadow .2s;}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow);}
+.field input:disabled{background:var(--surface);color:var(--muted);cursor:not-allowed;}
 .field input.err,.field select.err{border-color:var(--red);}
 .ferr{font-size:11px;color:var(--red);margin-top:4px;display:none;}
 .ferr.show{display:block;}
@@ -174,6 +175,17 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);-webkit-font-
 .exp-num{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:14px;}
 .curr-toggle{display:flex;align-items:center;gap:7px;margin-top:7px;cursor:pointer;user-select:none;font-size:13px;color:var(--ink2);}
 .curr-toggle input{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;}
+
+/* Editable lists (languages / certifications) */
+.list-row{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;}
+.list-row .field{flex:1;margin-bottom:0;}
+.cert-row-grid{flex:1;display:grid;grid-template-columns:1.4fr 1.4fr 1fr;gap:10px;}
+@media(max-width:640px){.cert-row-grid{grid-template-columns:1fr;}}
+.list-row-remove{flex-shrink:0;width:38px;height:38px;border:1.5px solid var(--border);border-radius:10px;background:#fff;color:var(--muted);font-size:14px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;}
+.list-row-remove:hover{border-color:var(--red);color:var(--red);}
+.list-add-btn{padding:9px 16px;border:1.5px dashed var(--border2);border-radius:10px;background:#fff;color:var(--accent-dark);font-size:13px;font-weight:700;font-family:var(--sans);cursor:pointer;transition:all .15s;}
+.list-add-btn:hover{border-color:var(--accent);background:var(--accent-soft);}
+.list-empty{font-size:12px;color:var(--muted2);margin-bottom:10px;}
 
 /* Skills picker */
 .skills-picker{display:flex;flex-wrap:wrap;gap:6px;}
@@ -315,21 +327,7 @@ input:focus,textarea:focus,select:focus{outline:none;}
         <div class="field"><label>First name <span class="req">*</span></label><input type="text" id="a-first" placeholder="María" autocomplete="given-name"><div class="ferr" id="err-a-first">Required</div></div>
         <div class="field"><label>Last name <span class="req">*</span></label><input type="text" id="a-last" placeholder="García" autocomplete="family-name"><div class="ferr" id="err-a-last">Required</div></div>
       </div>
-      <div class="field-row">
-        <div class="field"><label>Email address <span class="req">*</span></label><input type="email" id="a-email" placeholder="maria@email.com" autocomplete="email"><div class="ferr" id="err-a-email">Enter a valid email</div></div>
-        <div class="field"><label>Phone <span class="req">*</span></label><input type="tel" id="a-phone" placeholder="+57 300 000 0000" autocomplete="tel"><div class="ferr" id="err-a-phone">Required</div></div>
-      </div>
-      <div class="field-row">
-        <div class="field"><label>City <span class="req">*</span></label>
-          <select id="a-city"><option value="">Select city</option><option>Medellín</option><option>Bogotá</option><option>Cali</option><option>Barranquilla</option><option>Cartagena</option><option>Bucaramanga</option><option>Pereira</option><option>Manizales</option><option>Other</option></select>
-          <div class="ferr" id="err-a-city">Required</div>
-        </div>
-        <div class="field"><label>English level <span class="req">*</span></label>
-          <select id="a-english"><option value="">Select level</option><option>B1 Intermediate</option><option>B2 Upper-Intermediate</option><option>C1 Advanced</option><option>C2 / Native</option></select>
-          <div class="ferr" id="err-a-english">Required</div>
-        </div>
-      </div>
-      <div class="field"><label>LinkedIn profile</label><input type="url" id="a-linkedin" placeholder="https://linkedin.com/in/your-name"></div>
+      <div class="field"><label>Email address <span class="req">*</span></label><input type="email" id="a-email" placeholder="maria@email.com" autocomplete="email"><div class="ferr" id="err-a-email">Enter a valid email</div></div>
       <div class="field-row">
         <div class="field"><label>Password <span class="req">*</span></label><input type="password" id="a-password" placeholder="Password" autocomplete="new-password"><div class="ferr" id="err-a-password">Use at least 6 characters</div></div>
         <div class="field"><label>Confirm password <span class="req">*</span></label><input type="password" id="a-password2" placeholder="Confirm password" autocomplete="new-password"><div class="ferr" id="err-a-password2">Passwords must match</div></div>
@@ -371,55 +369,30 @@ input:focus,textarea:focus,select:focus{outline:none;}
         <div class="prog-label-row" id="prog-row">
           <div class="prog-step-item">
             <div class="pb active" id="pb-1">1</div>
-            <span class="pl active" id="pl-1">Profile</span>
+            <span class="pl active" id="pl-1">CV</span>
           </div>
           <div class="pline" id="pline-1"></div>
           <div class="prog-step-item">
             <div class="pb pending" id="pb-2">2</div>
-            <span class="pl pending" id="pl-2">Experience</span>
+            <span class="pl pending" id="pl-2">Profile</span>
           </div>
           <div class="pline" id="pline-2"></div>
           <div class="prog-step-item">
             <div class="pb pending" id="pb-3">3</div>
-            <span class="pl pending" id="pl-3">Questions</span>
+            <span class="pl pending" id="pl-3">Review</span>
           </div>
         </div>
       </div>
 
-      <!-- ── SECTION 1: Profile ──────────────────────────────────────── -->
+      <!-- ── SECTION 1: CV upload ──────────────────────────────────────── -->
       <div class="form-section active" id="sec-1">
         <div class="section-hdr">
-          <div class="section-note">Section 1 of 3 · Always required</div>
-          <h2>Your profile</h2>
-          <p>Basic information that applies to every role you apply for on Nearwork.</p>
+          <div class="section-note">Step 1 of 3</div>
+          <h2>Upload your CV</h2>
+          <p>We'll automatically pull your experience, skills, languages and certifications from your CV to save you time. You can review and edit everything before continuing.</p>
         </div>
-        <div class="field-row">
-          <div class="field"><label>First name <span class="req">*</span></label><input type="text" id="f-first" placeholder="María" autocomplete="given-name"><div class="ferr" id="err-first">Required</div></div>
-          <div class="field"><label>Last name <span class="req">*</span></label><input type="text" id="f-last" placeholder="García" autocomplete="family-name"><div class="ferr" id="err-last">Required</div></div>
-        </div>
-        <div class="field-row">
-          <div class="field"><label>Email address <span class="req">*</span></label><input type="email" id="f-email" placeholder="maria@email.com" autocomplete="email"><div class="ferr" id="err-email">Enter a valid email</div><div class="fhint">Applying again with the same email updates your profile — no duplicate accounts.</div></div>
-          <div class="field"><label>Phone <span class="req">*</span></label><input type="tel" id="f-phone" placeholder="+57 300 000 0000" autocomplete="tel"><div class="ferr" id="err-phone">Required</div></div>
-        </div>
-        <div class="field-row">
-          <div class="field"><label>City <span class="req">*</span></label>
-            <select id="f-city"><option value="">Select city</option><option>Medellín</option><option>Bogotá</option><option>Cali</option><option>Barranquilla</option><option>Cartagena</option><option>Bucaramanga</option><option>Pereira</option><option>Manizales</option><option>Other</option></select>
-            <div class="ferr" id="err-city">Required</div>
-          </div>
-          <div class="field"><label>English level <span class="req">*</span></label>
-            <select id="f-english"><option value="">Select level</option><option>B1 Intermediate</option><option>B2 Upper-Intermediate</option><option>C1 Advanced</option><option>C2 / Native</option></select>
-            <div class="ferr" id="err-english">Required</div>
-          </div>
-        </div>
-        <div class="field-row">
-          <div class="field"><label>Expected monthly salary <span class="req">*</span></label><input type="number" id="f-expected-salary" min="0" step="100" placeholder="2500"><div class="ferr" id="err-expected-salary">Required</div><div class="fhint">Tell us what you are looking to earn monthly.</div></div>
-          <div class="field"><label>Currency <span class="req">*</span></label>
-            <select id="f-expected-currency"><option value="USD">USD</option><option value="COP">COP</option></select>
-          </div>
-        </div>
-        <div class="field"><label>LinkedIn profile</label><input type="url" id="f-linkedin" placeholder="https://linkedin.com/in/your-name"><div class="fhint">Optional but strongly recommended.</div></div>
         <div class="field">
-          <label>CV / Resume <span class="req">*</span></label>
+          <label>CV / Resume</label>
           <div class="cv-drop" id="cv-drop" onclick="document.getElementById('cv-input').click()" ondragover="cvOver(event)" ondragleave="cvLeave()" ondrop="cvDrop(event)">
             <div style="font-size:28px;margin-bottom:6px;">📎</div>
             <div style="font-size:14px;font-weight:600;margin-bottom:3px;">Drop your CV here or click to upload</div>
@@ -428,17 +401,41 @@ input:focus,textarea:focus,select:focus{outline:none;}
           <input type="file" id="cv-input" accept=".pdf,.doc,.docx" style="display:none;" onchange="cvPicked(this)">
           <div class="cv-preview" id="cv-preview"><span style="font-size:18px;">📄</span><span class="cv-pname" id="cv-pname"></span><button class="cv-rem" onclick="cvRemove()">✕</button></div>
           <div class="cv-autofill-hint" id="cv-autofill-hint"></div>
-          <div class="ferr" id="err-cv">Please upload your CV</div>
         </div>
-        <div class="form-nav"><div class="step-info">Step 1 of 3</div><button class="btn-next" onclick="goStep(2)">Continue →</button></div>
+        <div class="form-nav"><button class="btn-back" onclick="goStep(2)">Skip — I'll fill in manually</button><div style="display:flex;align-items:center;gap:10px;"><div class="step-info">Step 1 of 3</div><button class="btn-next" onclick="goStep(2)">Continue →</button></div></div>
       </div>
 
-      <!-- ── SECTION 2: Experience ───────────────────────────────────── -->
+      <!-- ── SECTION 2: Basic info ─────────────────────────────────────── -->
       <div class="form-section" id="sec-2">
         <div class="section-hdr">
-          <div class="section-note">Section 2 of 3 · Always required</div>
-          <h2>Your experience</h2>
-          <p>Your two most recent or relevant roles, plus your top 5 skills.</p>
+          <div class="section-note">Step 2 of 3</div>
+          <h2>Your profile</h2>
+          <p>Basic information that applies to every role you apply for on Nearwork.</p>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>First name <span class="req">*</span></label><input type="text" id="f-first" placeholder="María" autocomplete="given-name"><div class="ferr" id="err-first">Required</div></div>
+          <div class="field"><label>Last name <span class="req">*</span></label><input type="text" id="f-last" placeholder="García" autocomplete="family-name"><div class="ferr" id="err-last">Required</div></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Email address</label><input type="email" id="f-email" disabled></div>
+          <div class="field"><label>Phone <span class="req">*</span></label><input type="tel" id="f-phone" placeholder="+57 300 000 0000" autocomplete="tel"><div class="ferr" id="err-phone">Required</div></div>
+        </div>
+        <div class="field"><label>Current role <span class="req">*</span></label><input type="text" id="f-current-role" placeholder="e.g. Customer Success Manager"><div class="ferr" id="err-current-role">Required</div><div class="fhint">The name of your current (or most recent) position.</div></div>
+        <div class="field-row">
+          <div class="field"><label>Expected salary — USD</label><input type="number" id="f-expected-salary-usd" min="0" step="100" placeholder="2500"></div>
+          <div class="field"><label>Expected salary — COP</label><input type="number" id="f-expected-salary-cop" min="0" step="100000" placeholder="10000000"></div>
+        </div>
+        <div class="ferr" id="err-expected-salary" style="margin:-10px 0 16px;">Please enter an expected salary in USD, COP, or both</div>
+        <div class="field"><label>LinkedIn profile (optional)</label><input type="url" id="f-linkedin" placeholder="https://linkedin.com/in/your-name"></div>
+        <div class="form-nav"><button class="btn-back" onclick="goStep(1)">← Back</button><div style="display:flex;align-items:center;gap:10px;"><div class="step-info">Step 2 of 3</div><button class="btn-next" onclick="goStep(3)">Continue →</button></div></div>
+      </div>
+
+      <!-- ── SECTION 3: Review parsed details ──────────────────────────── -->
+      <div class="form-section" id="sec-3">
+        <div class="section-hdr">
+          <div class="section-note">Step 3 of 3</div>
+          <h2>Review your experience</h2>
+          <p>We pre-filled this from your CV where possible — review, edit, and add anything we missed.</p>
         </div>
         <div class="exp-card">
           <div class="exp-num">Position 1 — most recent</div>
@@ -461,25 +458,37 @@ input:focus,textarea:focus,select:focus{outline:none;}
           <div class="field"><label>Verification contact</label><input type="email" id="e2-contact" placeholder="hr@company.com"></div>
         </div>
         <div class="field">
+          <label>Languages</label>
+          <div class="fhint" style="margin-bottom:10px;">Languages you can work in.</div>
+          <div id="languages-list"></div>
+          <button type="button" class="list-add-btn" onclick="addLanguageRow()">+ Add language</button>
+        </div>
+        <div class="field">
           <label>Top 5 skills <span class="req">*</span></label>
           <div class="fhint" style="margin-bottom:10px;">Select exactly 5 skills that best describe your strengths.</div>
           <div class="skills-picker" id="skills-picker"></div>
           <div class="skills-count">Selected: <span id="skills-count">0</span> / 5</div>
           <div class="ferr" id="err-skills">Please select exactly 5 skills</div>
         </div>
-        <div class="form-nav"><button class="btn-back" onclick="goStep(1)">← Back</button><div style="display:flex;align-items:center;gap:10px;"><div class="step-info">Step 2 of 3</div><button class="btn-next" onclick="goStep(3)">Continue →</button></div></div>
+        <div class="field">
+          <label>Certifications</label>
+          <div class="fhint" style="margin-bottom:10px;">Any relevant certifications (optional).</div>
+          <div id="certifications-list"></div>
+          <button type="button" class="list-add-btn" onclick="addCertificationRow()">+ Add certification</button>
+        </div>
+        <div class="form-nav"><button class="btn-back" onclick="goStep(2)">← Back</button><div style="display:flex;align-items:center;gap:10px;"><div class="step-info">Step 3 of 3</div><button class="btn-next" onclick="goStep(4)">Continue →</button></div></div>
       </div>
 
-      <!-- ── SECTION 3: Opening questions ───────────────────────────── -->
-      <div class="form-section" id="sec-3">
+      <!-- ── SECTION 4: Opening questions ───────────────────────────── -->
+      <div class="form-section" id="sec-4">
         <div class="section-hdr">
-          <div class="section-note">Section 3 of 3 · Specific to this role</div>
+          <div class="section-note">Final step</div>
           <h2>Opening questions</h2>
           <p>These questions are specific to this role. Take your time — thoughtful answers make a real difference.</p>
         </div>
         <div id="questions-container"><!-- questions rendered by JS --></div>
         <div class="submit-error" id="submit-error"></div>
-        <div class="form-nav"><button class="btn-back" onclick="goStep(2)">← Back</button><div style="display:flex;align-items:center;gap:10px;"><div class="step-info">Step 3 of 3</div><button class="btn-submit" onclick="submitApp()">Submit application →</button></div></div>
+        <div class="form-nav"><button class="btn-back" onclick="goStep(3)">← Back</button><div style="display:flex;align-items:center;gap:10px;"><div class="step-info">Final step</div><button class="btn-submit" onclick="submitApp()">Submit application →</button></div></div>
       </div>
 
     </div><!-- /nw-form-wrap -->
@@ -538,6 +547,8 @@ const SKILLS = [
 
 let opening       = null;
 let selectedSkills= new Set();
+let languagesList = [];
+let certificationsList = [];
 let cvFile        = null;
 let existingCvUrl = null;
 let ynAnswers     = {};
@@ -643,6 +654,8 @@ async function init() {
 
   // Render skills
   renderSkills();
+  renderLanguagesList();
+  renderCertificationsList();
 
   document.getElementById('page-loading').style.display  = 'none';
   document.getElementById('opening-view').style.display  = 'block';
@@ -930,29 +943,17 @@ window.toggleJobNotifications = function() {
   document.getElementById('notification-pop')?.classList.toggle('show');
 };
 
-function salaryNumber(value) {
-  return Number(String(value || '').replace(/[^\d.]/g, ''));
-}
-
-function coerceExpectedSalaryCurrency() {
-  const amountInput = document.getElementById('f-expected-salary');
-  const currencyInput = document.getElementById('f-expected-currency');
-  if (!amountInput || !currencyInput) return;
-  const amount = salaryNumber(amountInput.value);
-  if (currencyInput.value === 'USD' && amount >= 100000) currencyInput.value = 'COP';
-  if (amount > 0) amountInput.value = Math.round(amount);
-}
-
 function prefillCandidate(candidate) {
   activeCandidate = candidate || activeCandidate;
   setField('f-first', candidate.firstName);
   setField('f-last', candidate.lastName);
   setField('f-email', candidate.email);
   setField('f-phone', candidate.phone);
-  setField('f-city', candidate.city);
-  setField('f-english', candidate.english);
-  setField('f-expected-salary', candidate.expectedSalaryAmount || candidate.salaryUSD || candidate.salaryExpectationAmount);
-  setField('f-expected-currency', candidate.expectedSalaryCurrency || candidate.salaryCurrency || 'USD');
+  setField('f-current-role', candidate.currentRole || candidate.experience?.[0]?.title);
+  const legacyAmount = candidate.expectedSalaryAmount || candidate.salaryUSD || candidate.salaryExpectationAmount;
+  const legacyCurrency = candidate.expectedSalaryCurrency || candidate.salaryCurrency || 'USD';
+  setField('f-expected-salary-usd', candidate.expectedSalaryUSD || (legacyCurrency === 'USD' ? legacyAmount : undefined));
+  setField('f-expected-salary-cop', candidate.expectedSalaryCOP || (legacyCurrency === 'COP' ? legacyAmount : undefined));
   setField('f-linkedin', candidate.linkedin);
 
   const exp = Array.isArray(candidate.experience) ? candidate.experience : [];
@@ -976,16 +977,25 @@ function prefillCandidate(candidate) {
     renderSkills();
   }
 
+  if (Array.isArray(candidate.languages) && candidate.languages.length) {
+    languagesList = candidate.languages.filter(Boolean).map(String);
+    renderLanguagesList();
+  }
+
+  if (Array.isArray(candidate.certifications) && candidate.certifications.length) {
+    certificationsList = candidate.certifications.map(c => ({ name: c.name || '', issuer: c.issuer || '', date: c.date || '' }));
+    renderCertificationsList();
+  }
+
   if (candidate.cvUrl) {
     existingCvUrl = candidate.cvUrl;
     document.getElementById('cv-pname').textContent = 'CV already on file';
     document.getElementById('cv-preview').classList.add('show');
-    document.getElementById('err-cv').classList.remove('show');
   }
 }
 
 function setAccountFieldsEnabled(enabled) {
-  ['a-first','a-last','a-phone','a-city','a-english','a-linkedin','a-password2'].forEach(id => {
+  ['a-first','a-last','a-password2'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     el.disabled = !enabled;
@@ -1019,9 +1029,6 @@ function validateAccountStep() {
   const first = document.getElementById('a-first').value.trim();
   const last = document.getElementById('a-last').value.trim();
   const email = document.getElementById('a-email').value.trim();
-  const phone = document.getElementById('a-phone').value.trim();
-  const city = document.getElementById('a-city').value;
-  const english = document.getElementById('a-english').value;
   const password = document.getElementById('a-password').value;
   const password2 = document.getElementById('a-password2').value;
   if (accountMode === 'login') {
@@ -1032,9 +1039,6 @@ function validateAccountStep() {
   if (!first) { showErr('err-a-first'); ok=false; } else clearErr('err-a-first');
   if (!last) { showErr('err-a-last'); ok=false; } else clearErr('err-a-last');
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showErr('err-a-email'); ok=false; } else clearErr('err-a-email');
-  if (!phone) { showErr('err-a-phone'); ok=false; } else clearErr('err-a-phone');
-  if (!city) { showErr('err-a-city'); ok=false; } else clearErr('err-a-city');
-  if (!english) { showErr('err-a-english'); ok=false; } else clearErr('err-a-english');
   if (!password || password.length < 6) { showErr('err-a-password'); ok=false; } else clearErr('err-a-password');
   if (password !== password2) { showErr('err-a-password2'); ok=false; } else clearErr('err-a-password2');
   if (!document.getElementById('a-privacy').checked) { showErr('err-a-privacy'); ok=false; } else clearErr('err-a-privacy');
@@ -1174,10 +1178,6 @@ async function createProfileAndContinue() {
     email,
     firstName: document.getElementById('a-first').value.trim(),
     lastName: document.getElementById('a-last').value.trim(),
-    phone: document.getElementById('a-phone').value.trim(),
-    city: document.getElementById('a-city').value,
-    english: document.getElementById('a-english').value,
-    linkedin: document.getElementById('a-linkedin').value.trim(),
     privacyConsent: true,
     privacyConsentAt: consentAt,
     marketingConsent,
@@ -1194,8 +1194,6 @@ async function createProfileAndContinue() {
       syncCandidateToHubSpot({
         email: candidate.email,
         name: [candidate.firstName, candidate.lastName].filter(Boolean).join(' '),
-        phone: candidate.phone,
-        city: candidate.city,
         status: 'active',
         source: 'jobs.nearwork.co'
       }).catch(() => null);
@@ -1368,16 +1366,6 @@ function applyParsedToForm(p) {
     const pEl = document.getElementById('f-phone');
     if (pEl && !pEl.value) { pEl.value = p.phone; filled.push('phone'); }
   }
-  // Try to match city from the dropdown options
-  if (p.city) {
-    const cityEl = document.getElementById('f-city');
-    if (cityEl && !cityEl.value) {
-      const norm = (s) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-      const cityNorm = norm(p.city);
-      const match = [...cityEl.options].find((o) => o.value && norm(o.value).split(/[, ]/)[0] && cityNorm.includes(norm(o.value).split(/[, ]/)[0]));
-      if (match) { cityEl.value = match.value; filled.push('city'); }
-    }
-  }
 
   // ── Section 2: Work experience (positions 1 and 2) ──────────────────────
   const work = Array.isArray(p.workHistory) ? p.workHistory : [];
@@ -1394,6 +1382,26 @@ function applyParsedToForm(p) {
   };
   if (work[0]) { fillWork('e1', work[0]); filled.push(`${work.length} role${work.length !== 1 ? 's' : ''}`); }
   if (work[1]) fillWork('e2', work[1]);
+
+  // ── Current role — prefill from most recent work history ────────────────
+  if (work[0]?.title) {
+    const roleEl = document.getElementById('f-current-role');
+    if (roleEl && !roleEl.value) { roleEl.value = work[0].title; filled.push('current role'); }
+  }
+
+  // ── Languages ─────────────────────────────────────────────────────────
+  if (Array.isArray(p.languages) && p.languages.length > 0 && languagesList.length === 0) {
+    languagesList = p.languages.filter(Boolean).map(String);
+    renderLanguagesList();
+    filled.push(`${languagesList.length} language${languagesList.length !== 1 ? 's' : ''}`);
+  }
+
+  // ── Certifications ────────────────────────────────────────────────────
+  if (Array.isArray(p.certifications) && p.certifications.length > 0 && certificationsList.length === 0) {
+    certificationsList = p.certifications.map(c => ({ name: c.name || '', issuer: c.issuer || '', date: c.date || '' }));
+    renderCertificationsList();
+    filled.push(`${certificationsList.length} certification${certificationsList.length !== 1 ? 's' : ''}`);
+  }
 
   // ── Section 2: Skills — match parsed skills against SKILLS catalog ───────
   if (Array.isArray(p.skills) && p.skills.length > 0 && selectedSkills.size === 0) {
@@ -1414,6 +1422,60 @@ function applyParsedToForm(p) {
   return filled;
 }
 
+// ── Languages list ────────────────────────────────────────────────────────
+function renderLanguagesList() {
+  const container = document.getElementById('languages-list');
+  if (!container) return;
+  container.innerHTML = '';
+  if (!languagesList.length) {
+    container.innerHTML = '<div class="list-empty">No languages added yet.</div>';
+  }
+  languagesList.forEach((lang, idx) => {
+    const row = document.createElement('div');
+    row.className = 'list-row';
+    row.innerHTML = `
+      <div class="field"><input type="text" placeholder="e.g. English — Advanced" value="${escapeHtml(lang)}"></div>
+      <button type="button" class="list-row-remove" aria-label="Remove language">✕</button>`;
+    row.querySelector('input').addEventListener('input', e => { languagesList[idx] = e.target.value; });
+    row.querySelector('.list-row-remove').addEventListener('click', () => { languagesList.splice(idx, 1); renderLanguagesList(); });
+    container.appendChild(row);
+  });
+}
+window.addLanguageRow = function() {
+  languagesList.push('');
+  renderLanguagesList();
+};
+
+// ── Certifications list ──────────────────────────────────────────────────
+function renderCertificationsList() {
+  const container = document.getElementById('certifications-list');
+  if (!container) return;
+  container.innerHTML = '';
+  if (!certificationsList.length) {
+    container.innerHTML = '<div class="list-empty">No certifications added yet.</div>';
+  }
+  certificationsList.forEach((cert, idx) => {
+    const row = document.createElement('div');
+    row.className = 'list-row';
+    row.innerHTML = `
+      <div class="cert-row-grid">
+        <div class="field"><input type="text" placeholder="Certification name" value="${escapeHtml(cert.name || '')}" data-k="name"></div>
+        <div class="field"><input type="text" placeholder="Issuing organization" value="${escapeHtml(cert.issuer || '')}" data-k="issuer"></div>
+        <div class="field"><input type="text" placeholder="Date (e.g. 2023)" value="${escapeHtml(cert.date || '')}" data-k="date"></div>
+      </div>
+      <button type="button" class="list-row-remove" aria-label="Remove certification">✕</button>`;
+    row.querySelectorAll('input').forEach(inp => {
+      inp.addEventListener('input', e => { certificationsList[idx][e.target.dataset.k] = e.target.value; });
+    });
+    row.querySelector('.list-row-remove').addEventListener('click', () => { certificationsList.splice(idx, 1); renderCertificationsList(); });
+    container.appendChild(row);
+  });
+}
+window.addCertificationRow = function() {
+  certificationsList.push({ name: '', issuer: '', date: '' });
+  renderCertificationsList();
+};
+
 // ── Experience ────────────────────────────────────────────────────────────
 window.toggleCurr = prefix => {
   const checked = document.getElementById(prefix+'-curr').checked;
@@ -1428,31 +1490,26 @@ function clearErr(id){ const el=document.getElementById(id); if(el) el.classList
 
 function validateStep(step) {
   let ok = true;
-  if (step === 1) {
-    coerceExpectedSalaryCurrency();
+  if (step === 2) {
     const first = document.getElementById('f-first').value.trim();
     const last  = document.getElementById('f-last').value.trim();
-    const email = document.getElementById('f-email').value.trim();
     const phone = document.getElementById('f-phone').value.trim();
-    const city  = document.getElementById('f-city').value;
-    const eng   = document.getElementById('f-english').value;
-    const expectedSalary = Number(document.getElementById('f-expected-salary').value || 0);
+    const role  = document.getElementById('f-current-role').value.trim();
+    const usd = Number(document.getElementById('f-expected-salary-usd').value || 0);
+    const cop = Number(document.getElementById('f-expected-salary-cop').value || 0);
     if (!first) { showErr('err-first'); ok=false; } else clearErr('err-first');
     if (!last)  { showErr('err-last');  ok=false; } else clearErr('err-last');
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showErr('err-email'); ok=false; } else clearErr('err-email');
     if (!phone) { showErr('err-phone'); ok=false; } else clearErr('err-phone');
-    if (!city)  { showErr('err-city');  ok=false; } else clearErr('err-city');
-    if (!eng)   { showErr('err-english'); ok=false; } else clearErr('err-english');
-    if (!expectedSalary) { showErr('err-expected-salary'); ok=false; } else clearErr('err-expected-salary');
-    if (!cvFile && !existingCvUrl){ showErr('err-cv'); ok=false; } else clearErr('err-cv');
+    if (!role)  { showErr('err-current-role'); ok=false; } else clearErr('err-current-role');
+    if (!usd && !cop) { showErr('err-expected-salary'); ok=false; } else clearErr('err-expected-salary');
   }
-  if (step === 2) {
+  if (step === 3) {
     if (!document.getElementById('e1-co').value.trim())    { showErr('err-e1-co'); ok=false; } else clearErr('err-e1-co');
     if (!document.getElementById('e1-title').value.trim()) { showErr('err-e1-title'); ok=false; } else clearErr('err-e1-title');
     if (!document.getElementById('e1-from').value)         { showErr('err-e1-from'); ok=false; } else clearErr('err-e1-from');
     if (selectedSkills.size !== 5) { showErr('err-skills'); ok=false; } else clearErr('err-skills');
   }
-  if (step === 3) {
+  if (step === 4) {
     const qs = document.querySelectorAll('#questions-container .q-item');
     qs.forEach(qItem => {
       const qid  = qItem.dataset.qid;
@@ -1471,9 +1528,6 @@ function validateStep(step) {
   return ok;
 }
 
-document.getElementById('f-expected-salary')?.addEventListener('blur', coerceExpectedSalaryCurrency);
-document.getElementById('f-expected-currency')?.addEventListener('change', coerceExpectedSalaryCurrency);
-
 // ── Navigation ────────────────────────────────────────────────────────────
 window.goStep = function(to) {
   if (to > currentStep && !validateStep(currentStep)) {
@@ -1490,13 +1544,13 @@ window.goStep = function(to) {
 function updateProg(step) {
   for (let i=1;i<=3;i++){
     const b=document.getElementById('pb-'+i), l=document.getElementById('pl-'+i);
-    if(i<step)       {b.className='pb done'; b.textContent='✓'; l.className='pl done';}
+    if(step>3 || i<step)  {b.className='pb done'; b.textContent='✓'; l.className='pl done';}
     else if(i===step){b.className='pb active'; b.textContent=i; l.className='pl active';}
     else             {b.className='pb pending'; b.textContent=i; l.className='pl pending';}
   }
   for(let i=1;i<=2;i++){
     const ln=document.getElementById('pline-'+i);
-    if(i<step) ln.classList.add('done'); else ln.classList.remove('done');
+    if(step>3 || i<step) ln.classList.add('done'); else ln.classList.remove('done');
   }
 }
 
@@ -1610,7 +1664,7 @@ async function submitApplicationWithServerBackup(appData) {
 }
 
 window.submitApp = async function() {
-  if (!validateStep(3)) {
+  if (!validateStep(4)) {
     document.querySelector('.ferr.show')?.scrollIntoView({behavior:'smooth',block:'center'});
     return;
   }
@@ -1681,10 +1735,9 @@ window.submitApp = async function() {
     firstName:  document.getElementById('f-first').value.trim(),
     lastName:   document.getElementById('f-last').value.trim(),
     phone:      document.getElementById('f-phone').value.trim(),
-    city:       document.getElementById('f-city').value,
-    english:    document.getElementById('f-english').value,
-    expectedSalaryAmount: Number(document.getElementById('f-expected-salary').value || 0),
-    expectedSalaryCurrency: document.getElementById('f-expected-currency').value || 'USD',
+    currentRole: document.getElementById('f-current-role').value.trim(),
+    expectedSalaryUSD: Number(document.getElementById('f-expected-salary-usd').value || 0) || null,
+    expectedSalaryCOP: Number(document.getElementById('f-expected-salary-cop').value || 0) || null,
     linkedin:   document.getElementById('f-linkedin').value.trim(),
     cvUrl,
     experience: [
@@ -1692,6 +1745,8 @@ window.submitApp = async function() {
       { company: document.getElementById('e2-co').value.trim(), title: document.getElementById('e2-title').value.trim(), from: document.getElementById('e2-from').value, to: document.getElementById('e2-curr').checked ? 'present' : document.getElementById('e2-to').value, contact: document.getElementById('e2-contact').value.trim() },
     ],
     skills: [...selectedSkills],
+    languages: languagesList.map(l => l.trim()).filter(Boolean),
+    certifications: certificationsList.filter(c => c.name && c.name.trim()).map(c => ({ name: c.name.trim(), issuer: (c.issuer || '').trim(), date: (c.date || '').trim() })),
     questions: questionsAnswers,
   };
 

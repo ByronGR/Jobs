@@ -39,8 +39,15 @@ export default async function handler(req, res) {
     const appData = req.body || {};
     const email = String(appData.email || '').trim().toLowerCase();
     const openingCode = String(appData.openingCode || '').trim();
-    const expectedSalaryAmount = Number(appData.expectedSalaryAmount || appData.salaryExpectationAmount || 0);
-    const expectedSalaryCurrency = String(appData.expectedSalaryCurrency || appData.salaryCurrency || 'USD').toUpperCase() === 'COP' ? 'COP' : 'USD';
+    const expectedSalaryUSD = appData.expectedSalaryUSD != null && appData.expectedSalaryUSD !== '' ? Number(appData.expectedSalaryUSD) : null;
+    const expectedSalaryCOP = appData.expectedSalaryCOP != null && appData.expectedSalaryCOP !== '' ? Number(appData.expectedSalaryCOP) : null;
+    // Legacy single amount+currency fields, kept for Admin's existing candidate views
+    const expectedSalaryAmount = expectedSalaryUSD || expectedSalaryCOP || Number(appData.expectedSalaryAmount || appData.salaryExpectationAmount || 0);
+    const expectedSalaryCurrency = expectedSalaryUSD
+      ? 'USD'
+      : expectedSalaryCOP
+        ? 'COP'
+        : (String(appData.expectedSalaryCurrency || appData.salaryCurrency || 'USD').toUpperCase() === 'COP' ? 'COP' : 'USD');
     const expectedSalaryLabel = expectedSalaryAmount
       ? `${expectedSalaryCurrency} ${Math.round(expectedSalaryAmount).toLocaleString('en-US')}/mo`
       : '';
@@ -137,6 +144,9 @@ export default async function handler(req, res) {
       city: appData.city || '',
       english: appData.english || '',
       linkedin: appData.linkedin || '',
+      currentRole: appData.currentRole || '',
+      expectedSalaryUSD,
+      expectedSalaryCOP,
       expectedSalaryAmount,
       expectedSalaryCurrency,
       expectedSalary: expectedSalaryLabel,
@@ -144,6 +154,8 @@ export default async function handler(req, res) {
       cvUrl: appData.cvUrl || null,
       workHistory: Array.isArray(appData.experience) ? appData.experience : [],  // keep array as workHistory
       skills: Array.isArray(appData.skills) ? appData.skills : [],
+      languages: Array.isArray(appData.languages) ? appData.languages : [],
+      certifications: Array.isArray(appData.certifications) ? appData.certifications : [],
       status: 'applied',
       isMockData: false,
       source: 'jobs.nearwork.co',
@@ -202,6 +214,9 @@ export default async function handler(req, res) {
         english: appData.english || '',
         englishLevel: appData.english || '',
         linkedin: appData.linkedin || '',
+        currentRole: appData.currentRole || '',
+        expectedSalaryUSD,
+        expectedSalaryCOP,
         expectedSalaryAmount,
         expectedSalaryCurrency,
         expectedSalary: expectedSalaryLabel,
@@ -211,6 +226,8 @@ export default async function handler(req, res) {
         cvUrl: appData.cvUrl || null,
         skills: Array.isArray(appData.skills) ? appData.skills : [],
         experience: Array.isArray(appData.experience) ? appData.experience : [],
+        languages: Array.isArray(appData.languages) ? appData.languages : [],
+        certifications: Array.isArray(appData.certifications) ? appData.certifications : [],
         applications: nextApplications,
         status: existingUser.status || 'active',
         source: existingUser.source || 'jobs.nearwork.co',
@@ -243,6 +260,11 @@ export default async function handler(req, res) {
       clientName: 'Nearwork client',
       experience: Array.isArray(appData.experience) ? appData.experience : [],
       skills: Array.isArray(appData.skills) ? appData.skills : [],
+      languages: Array.isArray(appData.languages) ? appData.languages : [],
+      certifications: Array.isArray(appData.certifications) ? appData.certifications : [],
+      currentRole: appData.currentRole || '',
+      expectedSalaryUSD,
+      expectedSalaryCOP,
       expectedSalaryAmount,
       expectedSalaryCurrency,
       expectedSalary: expectedSalaryLabel,

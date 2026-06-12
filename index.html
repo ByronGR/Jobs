@@ -209,7 +209,9 @@ function mapOpening(op) {
     ? op.createdAt.toDate().toLocaleDateString('en-US',{month:'short',day:'numeric'})
     : op.createdAt ? new Date(op.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
   const orgName = op.orgName || op.company || '';
-  const logoLetters = (orgName.split(' ').filter(Boolean).map(w=>w[0]).join('').toUpperCase().slice(0,2)) || (op.title||'??').slice(0,2).toUpperCase();
+  // Anonymized "Partner company" listings have no real org name — show a generic
+  // briefcase mark instead of misleading initials derived from the job title.
+  const logoLetters = orgName ? orgName.split(' ').filter(Boolean).map(w=>w[0]).join('').toUpperCase().slice(0,2) : '';
   const colorIdx = orgName ? orgName.charCodeAt(0) : (code||'').charCodeAt(0)||0;
   const companyColor = op.companyColor || COMPANY_COLORS[colorIdx % COMPANY_COLORS.length];
   // Detail sections
@@ -253,7 +255,7 @@ function Icon({ name, size=16, color, strokeWidth=1.75 }) {
 function CompanyTile({ letters, color, size=48, radius=10 }) {
   return (
     <div className="nw-tile" style={{ width:size, height:size, borderRadius:radius, background:color, fontSize:size*0.36 }}>
-      {letters}
+      {letters || <Icon name="briefcase" size={Math.round(size*0.42)} color="#fff" strokeWidth={2} />}
     </div>
   );
 }
@@ -305,7 +307,7 @@ function Nav({ view, onNav, user, savedCount, appliedCount, onSignIn, onSignUp, 
         ) : (
           <>
             <button className="nw-btn nw-btn-sm nw-btn-ghost" onClick={onSignIn} style={{ border:'1px solid var(--border2)', color:'var(--ink2)' }}>Log in</button>
-            <button className="nw-btn nw-btn-sm nw-btn-primary" onClick={onSignUp}>Create account →</button>
+            <button className="nw-btn nw-btn-sm nw-btn-primary" onClick={() => onSignUp()}>Create account →</button>
           </>
         )}
       </div>
@@ -322,7 +324,7 @@ function Hero({ openCount, onBrowse, onSignUp }) {
       <p className="nw-hero-sub">Browse open roles at fast-growing US companies — apply from Colombia in minutes.</p>
       <div className="nw-hero-cta">
         <button className="nw-btn nw-btn-lg nw-btn-primary" onClick={onBrowse} style={{ boxShadow:'0 10px 28px -8px rgba(22,160,133,.45)' }}>Browse open roles →</button>
-        <button className="nw-btn nw-btn-lg nw-btn-secondary" onClick={onSignUp}>Log in to your profile</button>
+        <button className="nw-btn nw-btn-lg nw-btn-secondary" onClick={() => onSignUp()}>Log in to your profile</button>
       </div>
       <div className="nw-hero-stats">
         <div className="nw-hs"><div className="nw-hs-num">{openCount || '—'}</div><div className="nw-hs-label">Open roles</div></div>
@@ -376,7 +378,7 @@ function SignUpStrip({ onSignIn, onSignUp }) {
         </div>
         <div style={{ display:'flex', gap:8, position:'relative', zIndex:1, flexWrap:'wrap' }}>
           <button className="nw-btn nw-btn-sm" onClick={onSignIn} style={{ background:'rgba(255,255,255,.1)', color:'#fff', border:'1px solid rgba(255,255,255,.2)' }}>Sign in</button>
-          <button className="nw-btn nw-btn-sm nw-btn-primary" onClick={onSignUp}>Create account →</button>
+          <button className="nw-btn nw-btn-sm nw-btn-primary" onClick={() => onSignUp()}>Create account →</button>
         </div>
       </div>
     </div>
@@ -464,7 +466,7 @@ function CheckList({ items, muted=false }) {
 function JobDetail({ job, saved, applied, onBack, onToggleSave, isLoggedIn, onSignUp }) {
   const applyUrl = `/apply.html?code=${encodeURIComponent(job.id)}`;
   const handleApply = () => {
-    if (!isLoggedIn && onSignUp) { onSignUp(); return; }
+    if (!isLoggedIn && onSignUp) { onSignUp(job); return; }
     window.location.href = applyUrl;
   };
   const handleSave = () => {
@@ -592,7 +594,7 @@ function JobDetail({ job, saved, applied, onBack, onToggleSave, isLoggedIn, onSi
               <div style={{ borderTop:'1px solid var(--border)', paddingTop:16 }}>
                 <div style={{ fontSize:11, fontWeight:700, color:'var(--muted)', letterSpacing:'.08em', textTransform:'uppercase', marginBottom:10 }}>Key skills</div>
                 <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
-                  {job.skills.map(s => <span key={s} className="nw-chip outline">{s}</span>)}
+                  {job.skills.map(s => <span key={s} className="nw-chip outline" style={{ whiteSpace:'normal', maxWidth:'100%', borderRadius:10, textAlign:'left', lineHeight:1.4 }}>{s}</span>)}
                 </div>
               </div>
             )}
@@ -796,6 +798,7 @@ function App() {
   const [portalMismatch, setPortalMismatch] = useState(false);
   const [showAuth, setShowAuth]         = useState(false);
   const [authMode, setAuthMode]         = useState('login');
+  const [pendingApplyJob, setPendingApplyJob] = useState(null);
 
   // Load Firebase data
   useEffect(() => {
@@ -937,6 +940,12 @@ function App() {
     const uid = candidate?.uid || candidate?.id;
     if (uid) setApplied(getAppliedSet(uid));
     setShowAuth(false);
+    // If they were trying to apply for a role, send them straight back to it
+    // so creating an account doesn't derail the application.
+    if (pendingApplyJob) {
+      window.location.href = `/apply.html?code=${encodeURIComponent(pendingApplyJob.id)}`;
+      return;
+    }
   };
 
   const handleLogout = async () => {
@@ -956,7 +965,7 @@ function App() {
   };
 
   const openSignIn = () => { setAuthMode('login'); setShowAuth(true); };
-  const openSignUp = () => { setAuthMode('signup'); setShowAuth(true); };
+  const openSignUp = (job) => { setPendingApplyJob(job || null); setAuthMode('signup'); setShowAuth(true); };
 
   // Filtered jobs
   const filteredJobs = useMemo(() => {

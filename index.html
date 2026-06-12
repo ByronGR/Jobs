@@ -74,7 +74,7 @@ p{max-width:none;}
 /* Main layout */
 .nw-main{max-width:1140px;margin:0 auto;padding:32px clamp(24px,5vw,56px) 96px;}
 /* Job grid */
-.nw-jobs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(336px,1fr));gap:16px;}
+.nw-jobs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(336px,100%),1fr));gap:16px;}
 /* Job card v2 */
 .nw-card{background:#fff;border:1px solid var(--border);border-radius:20px;padding:24px;cursor:pointer;transition:border-color .2s,box-shadow .2s,transform .2s;display:flex;flex-direction:column;gap:16px;position:relative;min-height:270px;animation:fadeUp .28s ease both;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
@@ -84,7 +84,7 @@ p{max-width:none;}
 /* Company tile */
 .nw-tile{display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;border-radius:10px;flex-shrink:0;box-shadow:inset 0 -1px 0 rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.06);}
 /* Chip */
-.nw-chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;padding:4px 10px;border-radius:99px;white-space:nowrap;}
+.nw-chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;padding:4px 10px;border-radius:99px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;}
 .nw-chip.outline{background:transparent;border:1px solid var(--border2);color:var(--ink2);}
 .nw-chip.success{background:#F0FDF4;border:1px solid #22C55E40;color:#16A34A;}
 .nw-chip.muted{background:var(--surface);border:1px solid var(--border);color:var(--muted);}
@@ -148,7 +148,7 @@ p{max-width:none;}
 .nw-footer-inner{max-width:1140px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;}
 /* Responsive */
 @media(max-width:720px){
-  .nw-jobs-grid{grid-template-columns:1fr;}
+  .nw-jobs-grid{grid-template-columns:minmax(0,1fr);}
   .nw-hero-title{font-size:clamp(36px,9vw,54px);}
   .nw-hs-sep{display:none;}
   .nw-detail-header,.nw-detail-grid{padding-left:20px;padding-right:20px;}
@@ -491,7 +491,7 @@ function JobDetail({ job, saved, applied, onBack, onToggleSave, isLoggedIn, onSi
               <span style={{ fontSize:14, fontWeight:500, color:'var(--muted)' }}>{job.company}</span>
               {job.industry && <><span style={{ color:'var(--border2)' }}>·</span><span style={{ fontSize:13, color:'var(--muted2)' }}>{job.industry}</span></>}
             </div>
-            <h1 style={{ fontSize:'clamp(36px,5vw,56px)', fontWeight:700, color:'var(--ink)', letterSpacing:'-.03em', lineHeight:1.05, margin:0, fontFamily:"'Poppins',sans-serif" }}>
+            <h1 style={{ fontSize:'clamp(28px,5vw,56px)', fontWeight:700, color:'var(--ink)', letterSpacing:'-.03em', lineHeight:1.05, margin:0, fontFamily:"'Poppins',sans-serif", overflowWrap:'break-word' }}>
               {job.title}
             </h1>
             <div style={{ display:'flex', flexWrap:'wrap', gap:16, marginTop:18, fontSize:14, color:'var(--muted)' }}>

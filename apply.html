@@ -109,6 +109,11 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);-webkit-font-
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow);}
 .field input:disabled{background:var(--surface);color:var(--muted);cursor:not-allowed;}
 .field input.err,.field select.err{border-color:var(--red);}
+.pw-field{position:relative;}
+.pw-field input{padding-right:42px;}
+.pw-toggle{position:absolute;top:0;right:0;bottom:0;width:42px;display:flex;align-items:center;justify-content:center;border:none;background:transparent;cursor:pointer;color:var(--muted);padding:0;}
+.pw-toggle:hover{color:var(--ink2);}
+.pw-toggle svg{width:18px;height:18px;}
 .ferr{font-size:11px;color:var(--red);margin-top:4px;display:none;}
 .ferr.show{display:block;}
 .fhint{font-size:11px;color:var(--muted2);margin-top:5px;line-height:1.5;}
@@ -329,8 +334,8 @@ input:focus,textarea:focus,select:focus{outline:none;}
       </div>
       <div class="field"><label>Email address <span class="req">*</span></label><input type="email" id="a-email" placeholder="maria@email.com" autocomplete="email"><div class="ferr" id="err-a-email">Enter a valid email</div></div>
       <div class="field-row">
-        <div class="field"><label>Password <span class="req">*</span></label><input type="password" id="a-password" placeholder="Password" autocomplete="new-password"><div class="ferr" id="err-a-password">Use at least 6 characters</div></div>
-        <div class="field"><label>Confirm password <span class="req">*</span></label><input type="password" id="a-password2" placeholder="Confirm password" autocomplete="new-password"><div class="ferr" id="err-a-password2">Passwords must match</div></div>
+        <div class="field"><label>Password <span class="req">*</span></label><div class="pw-field"><input type="password" id="a-password" placeholder="Password" autocomplete="new-password"><button type="button" class="pw-toggle" aria-label="Show password" onclick="togglePwField('a-password', this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button></div><div class="ferr" id="err-a-password">Use at least 6 characters</div></div>
+        <div class="field"><label>Confirm password <span class="req">*</span></label><div class="pw-field"><input type="password" id="a-password2" placeholder="Confirm password" autocomplete="new-password"><button type="button" class="pw-toggle" aria-label="Show password" onclick="togglePwField('a-password2', this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button></div><div class="ferr" id="err-a-password2">Passwords must match</div></div>
       </div>
       <div id="consent-block" style="display:none;margin:6px 0 4px;">
         <label style="display:flex;align-items:flex-start;gap:9px;cursor:pointer;font-size:13px;color:#2d2d2d;line-height:1.5;margin-bottom:3px;">
@@ -464,11 +469,11 @@ input:focus,textarea:focus,select:focus{outline:none;}
           <button type="button" class="list-add-btn" onclick="addLanguageRow()">+ Add language</button>
         </div>
         <div class="field">
-          <label>Top 5 skills <span class="req">*</span></label>
-          <div class="fhint" style="margin-bottom:10px;">Select exactly 5 skills that best describe your strengths.</div>
+          <label>Skills <span class="req">*</span></label>
+          <div class="fhint" style="margin-bottom:10px;">Select between 5 and 20 skills that best describe your strengths.</div>
           <div class="skills-picker" id="skills-picker"></div>
-          <div class="skills-count">Selected: <span id="skills-count">0</span> / 5</div>
-          <div class="ferr" id="err-skills">Please select exactly 5 skills</div>
+          <div class="skills-count">Selected: <span id="skills-count">0</span> / 20</div>
+          <div class="ferr" id="err-skills">Please select between 5 and 20 skills</div>
         </div>
         <div class="field">
           <label>Certifications</label>
@@ -572,6 +577,18 @@ function getSavedCandidate() {
   return getCandidateSession();
 }
 
+const EYE_ICON = '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>';
+const EYE_OFF_ICON = '<path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/>';
+
+window.togglePwField = function(inputId, btn) {
+  const input = document.getElementById(inputId);
+  const svg = btn.querySelector('svg');
+  const show = input.type === 'password';
+  input.type = show ? 'text' : 'password';
+  svg.innerHTML = show ? EYE_OFF_ICON : EYE_ICON;
+  btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+};
+
 function showAuthMessage(containerId, message) {
   const msg = document.getElementById(containerId);
   if (!msg) return;
@@ -634,9 +651,9 @@ async function init() {
 
   // Populate intro card
   const cur = opening.currency || 'USD';
-  const sym = cur === 'COP' ? 'COP ' : '$';
+  const loc = cur === 'COP' ? 'es-CO' : 'en-US';
   const sal = (opening.salaryMin && opening.salaryMax)
-    ? sym + parseInt(opening.salaryMin).toLocaleString() + '–' + sym + parseInt(opening.salaryMax).toLocaleString() + ' ' + cur + '/mo'
+    ? '$' + parseInt(opening.salaryMin).toLocaleString(loc) + ' – $' + parseInt(opening.salaryMax).toLocaleString(loc) + ' ' + cur + '/mo'
     : '';
   document.getElementById('ic-title').textContent = opening.title || 'Opening';
   document.getElementById('ic-meta').innerHTML = [
@@ -705,9 +722,9 @@ function renderDetailPanel(title, value, full = false) {
 
 function renderOpeningDetails() {
   const cur = opening.currency || 'USD';
-  const sym = cur === 'COP' ? 'COP ' : '$';
+  const loc = cur === 'COP' ? 'es-CO' : 'en-US';
   const salary = (opening.salaryMin && opening.salaryMax)
-    ? sym + parseInt(opening.salaryMin).toLocaleString() + ' – ' + sym + parseInt(opening.salaryMax).toLocaleString() + ' / mo ' + cur
+    ? '$' + parseInt(opening.salaryMin).toLocaleString(loc) + ' – $' + parseInt(opening.salaryMax).toLocaleString(loc) + ' ' + cur + '/mo'
     : openingValue(['salary', 'compensation'], 'Salary on request');
   const skills = (Array.isArray(opening.skills)?opening.skills:(opening.skills || '').split(',')).map(s => s.trim()).filter(Boolean).slice(0, 6);
   const summary = openingValue(['content_about', 'summary', 'description', 'jobDescription', 'jd'], 'Review the role details below and apply when you are ready.');
@@ -972,7 +989,7 @@ function prefillCandidate(candidate) {
   });
 
   if (Array.isArray(candidate.skills)) {
-    selectedSkills = new Set(candidate.skills.filter(skill => SKILLS.includes(skill)).slice(0, 5));
+    selectedSkills = new Set(candidate.skills.filter(skill => SKILLS.includes(skill)).slice(0, 20));
     document.getElementById('skills-count').textContent = selectedSkills.size;
     renderSkills();
   }
@@ -1280,7 +1297,7 @@ function renderSkills() {
       if (selectedSkills.has(skill)) {
         selectedSkills.delete(skill); pill.classList.remove('selected');
       } else {
-        if (selectedSkills.size >= 5) { pill.style.transform='scale(.95)'; setTimeout(()=>pill.style.transform='',150); return; }
+        if (selectedSkills.size >= 20) { pill.style.transform='scale(.95)'; setTimeout(()=>pill.style.transform='',150); return; }
         selectedSkills.add(skill); pill.classList.add('selected');
       }
       document.getElementById('skills-count').textContent = selectedSkills.size;
@@ -1411,7 +1428,7 @@ function applyParsedToForm(p) {
     const matched = SKILLS.filter((s) => {
       const sn = norm(s);
       return parsedNorms.some((pn) => sn.includes(pn) || pn.includes(sn));
-    }).slice(0, 5);
+    }).slice(0, 20);
     if (matched.length > 0) {
       selectedSkills = new Set(matched);
       document.getElementById('skills-count').textContent = selectedSkills.size;
@@ -1508,7 +1525,7 @@ function validateStep(step) {
     if (!document.getElementById('e1-co').value.trim())    { showErr('err-e1-co'); ok=false; } else clearErr('err-e1-co');
     if (!document.getElementById('e1-title').value.trim()) { showErr('err-e1-title'); ok=false; } else clearErr('err-e1-title');
     if (!document.getElementById('e1-from').value)         { showErr('err-e1-from'); ok=false; } else clearErr('err-e1-from');
-    if (selectedSkills.size !== 5) { showErr('err-skills'); ok=false; } else clearErr('err-skills');
+    if (selectedSkills.size < 5 || selectedSkills.size > 20) { showErr('err-skills'); ok=false; } else clearErr('err-skills');
   }
   if (step === 4) {
     const qs = document.querySelectorAll('#questions-container .q-item');

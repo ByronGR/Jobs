@@ -387,7 +387,7 @@ export async function submitApplication(applicationData) {
       ? 'COP'
       : (String(applicationData.expectedSalaryCurrency || applicationData.salaryCurrency || 'USD').toUpperCase() === 'COP' ? 'COP' : 'USD');
   const expectedSalary = expectedSalaryAmount
-    ? `${expectedSalaryCurrency} ${Math.round(expectedSalaryAmount).toLocaleString('en-US')}/mo`
+    ? `$${Math.round(expectedSalaryAmount).toLocaleString(expectedSalaryCurrency === 'COP' ? 'es-CO' : 'en-US')} ${expectedSalaryCurrency}/mo`
     : '';
   const user = await waitForAuthReady();
   const ownerUid = user?.uid || applicationData.ownerUid || applicationData.authUid || null;

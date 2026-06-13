@@ -127,6 +127,9 @@ p{max-width:none;}
 .nw-modal-field{margin-bottom:12px;}
 .nw-modal-field input{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:11px;font-size:14px;font-family:var(--sans);outline:none;transition:border-color .2s,box-shadow .2s;color:var(--ink);}
 .nw-modal-field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow);}
+.nw-pw-field{position:relative;}
+.nw-pw-field input{padding-right:42px;}
+.nw-pw-toggle{position:absolute;top:0;right:0;bottom:0;width:42px;display:flex;align-items:center;justify-content:center;border:none;background:transparent;cursor:pointer;padding:0;}
 .nw-modal-divider{display:flex;align-items:center;gap:10px;margin:14px 0;font-size:11px;color:var(--muted2);font-weight:700;text-transform:uppercase;letter-spacing:.08em;}
 .nw-modal-divider::before,.nw-modal-divider::after{content:'';flex:1;height:1px;background:var(--border);}
 /* Buttons */
@@ -202,9 +205,9 @@ function mapOpening(op) {
   const code = op.code || op.id;
   const skills = (Array.isArray(op.skills) ? op.skills : (op.skills||'').split(',')).map(s=>s.trim()).filter(Boolean);
   const cur = op.currency || op.salaryCurrency || 'USD';
-  const sym = cur === 'COP' ? 'COP ' : '$';
+  const loc = cur === 'COP' ? 'es-CO' : 'en-US';
   const salMin = parseInt(op.salaryMin)||0, salMax = parseInt(op.salaryMax)||0;
-  const salary = (!op.hideSalary && salMin && salMax) ? `${sym}${salMin.toLocaleString()} – ${sym}${salMax.toLocaleString()} /mo` : 'Salary on request';
+  const salary = (!op.hideSalary && salMin && salMax) ? `$${salMin.toLocaleString(loc)} – $${salMax.toLocaleString(loc)} ${cur}/mo` : 'Salary on request';
   const posted = op.createdAt?.toDate
     ? op.createdAt.toDate().toLocaleDateString('en-US',{month:'short',day:'numeric'})
     : op.createdAt ? new Date(op.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
@@ -616,6 +619,8 @@ function AuthModal({ mode, onClose, onSuccess, onSwitchMode }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [step, setStep] = useState('email'); // 'email' | 'password' (login flow)
   const [msg, setMsg] = useState('');
   const [isError, setIsError] = useState(false);
@@ -737,10 +742,16 @@ function AuthModal({ mode, onClose, onSuccess, onSwitchMode }) {
         )}
         <div className="nw-modal-field"><input type="email" placeholder="your@email.com" value={email} onChange={e=>setEmail(e.target.value)} onKeyDown={handleKey} autoFocus={!isSignup} autoComplete="email" /></div>
         {(isSignup || step==='password') && (
-          <div className="nw-modal-field"><input type="password" placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={handleKey} autoFocus={step==='password'} autoComplete={isSignup?'new-password':'current-password'} /></div>
+          <div className="nw-modal-field nw-pw-field">
+            <input type={showPassword?'text':'password'} placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={handleKey} autoFocus={step==='password'} autoComplete={isSignup?'new-password':'current-password'} />
+            <button type="button" className="nw-pw-toggle" aria-label={showPassword?'Hide password':'Show password'} onClick={()=>setShowPassword(v=>!v)}><Icon name={showPassword?'eye-off':'eye'} size={16} color="var(--muted2)" /></button>
+          </div>
         )}
         {isSignup && (
-          <div className="nw-modal-field"><input type="password" placeholder="Confirm password" value={confirm} onChange={e=>setConfirm(e.target.value)} onKeyDown={handleKey} autoComplete="new-password" /></div>
+          <div className="nw-modal-field nw-pw-field">
+            <input type={showConfirm?'text':'password'} placeholder="Confirm password" value={confirm} onChange={e=>setConfirm(e.target.value)} onKeyDown={handleKey} autoComplete="new-password" />
+            <button type="button" className="nw-pw-toggle" aria-label={showConfirm?'Hide password':'Show password'} onClick={()=>setShowConfirm(v=>!v)}><Icon name={showConfirm?'eye-off':'eye'} size={16} color="var(--muted2)" /></button>
+          </div>
         )}
         <button className="nw-btn nw-btn-primary" style={{ width:'100%', padding:13, fontSize:14, borderRadius:99 }} onClick={handleSubmit} disabled={loading}>
           {isSignup ? 'Create account' : step==='email' ? 'Continue' : 'Log in'}

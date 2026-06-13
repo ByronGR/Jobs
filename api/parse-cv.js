@@ -129,14 +129,21 @@ export default async function handler(req, res) {
           p.workExperienceDates?.parsed?.isCurrent ??
           p.workExperienceDates?.isCurrent ??
           w.dates?.isCurrent ??
-          (typeof endVal === "string" && /present|current|actualidad/i.test(endVal));
+          (typeof endVal === "string" && /present|current|ongoing|actualidad/i.test(endVal));
 
         // Fallback: extract first and second date from the raw entry text
         const rawText    = w.raw || "";
         const rawDates   = [...rawText.matchAll(/([A-Z][a-z]{2}\.?\s+\d{4}|\d{4})/g)].map((m) => m[0]);
         const fromFinal  = toYearMonth(startVal) || toYearMonth(rawDates[0]) || "";
-        const isCurr     = isCurrentFlag || /present|current|actualidad/i.test(rawText.slice(-30));
-        const toFinal    = isCurr && fromFinal ? "present" : (toYearMonth(endVal) || toYearMonth(rawDates[1]) || "");
+        const isCurr     = isCurrentFlag || /present|current|ongoing|actualidad/i.test(rawText.slice(-30));
+        let toFinal      = isCurr && fromFinal ? "present" : (toYearMonth(endVal) || toYearMonth(rawDates[1]) || "");
+
+        // Sanity check: an end date earlier than the start date means the
+        // fallback regex likely grabbed a date from a neighboring entry
+        // (e.g. an unparsed "Ongoing" end date). Treat as still current.
+        if (toFinal !== "present" && fromFinal && toFinal && toFinal < fromFinal) {
+          toFinal = "";
+        }
 
         return { title, company, from: fromFinal, to: toFinal };
       })

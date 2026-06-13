@@ -431,6 +431,11 @@ input:focus,textarea:focus,select:focus{outline:none;}
           <div class="field"><label>Expected salary — COP</label><input type="number" id="f-expected-salary-cop" min="0" step="100000" placeholder="10000000"></div>
         </div>
         <div class="ferr" id="err-expected-salary" style="margin:-10px 0 16px;">Please enter an expected salary in USD, COP, or both</div>
+        <div class="field-row">
+          <div class="field"><label>Department <span class="req">*</span></label><select id="f-department" onchange="onDepartmentChange()"></select></div>
+          <div class="field"><label>City <span class="req">*</span></label><select id="f-city"></select></div>
+        </div>
+        <div class="field"><label>English level</label><select id="f-english"><option value="">Select level</option><option value="B1">B1</option><option value="B2">B2</option><option value="C1">C1</option><option value="C2">C2</option><option value="Native">Native</option></select></div>
         <div class="field"><label>LinkedIn profile (optional)</label><input type="url" id="f-linkedin" placeholder="https://linkedin.com/in/your-name"></div>
         <div class="form-nav"><button class="btn-back" onclick="goStep(1)">← Back</button><div style="display:flex;align-items:center;gap:10px;"><div class="step-info">Step 2 of 3</div><button class="btn-next" onclick="goStep(3)">Continue →</button></div></div>
       </div>
@@ -442,26 +447,8 @@ input:focus,textarea:focus,select:focus{outline:none;}
           <h2>Review your experience</h2>
           <p>We pre-filled this from your CV where possible — review, edit, and add anything we missed.</p>
         </div>
-        <div class="exp-card">
-          <div class="exp-num">Position 1 — most recent</div>
-          <div class="field"><label>Company name <span class="req">*</span></label><input type="text" id="e1-co" placeholder="e.g. Acme SaaS Inc."><div class="ferr" id="err-e1-co">Required</div></div>
-          <div class="field"><label>Your title <span class="req">*</span></label><input type="text" id="e1-title" placeholder="e.g. Customer Success Manager"><div class="ferr" id="err-e1-title">Required</div></div>
-          <div class="field-row">
-            <div class="field"><label>Start date <span class="req">*</span></label><input type="month" id="e1-from"><div class="ferr" id="err-e1-from">Required</div></div>
-            <div class="field"><label>End date</label><input type="month" id="e1-to" placeholder="Leave blank if current"><label class="curr-toggle" style="margin-top:7px;"><input type="checkbox" id="e1-curr" onchange="toggleCurr('e1')"><span>I currently work here</span></label></div>
-          </div>
-          <div class="field"><label>Verification contact</label><input type="email" id="e1-contact" placeholder="hr@company.com"><div class="fhint">Optional — helps us verify your tenure quickly.</div></div>
-        </div>
-        <div class="exp-card">
-          <div class="exp-num">Position 2 — previous</div>
-          <div class="field"><label>Company name</label><input type="text" id="e2-co" placeholder="e.g. Startup Co."></div>
-          <div class="field"><label>Your title</label><input type="text" id="e2-title" placeholder="e.g. Account Manager"></div>
-          <div class="field-row">
-            <div class="field"><label>Start date</label><input type="month" id="e2-from"></div>
-            <div class="field"><label>End date</label><input type="month" id="e2-to"><label class="curr-toggle" style="margin-top:7px;"><input type="checkbox" id="e2-curr" onchange="toggleCurr('e2')"><span>Currently work here</span></label></div>
-          </div>
-          <div class="field"><label>Verification contact</label><input type="email" id="e2-contact" placeholder="hr@company.com"></div>
-        </div>
+        <div id="experience-list"></div>
+        <button type="button" class="list-add-btn" onclick="addExperienceRow()" style="margin-bottom:14px;">+ Add position</button>
         <div class="field">
           <label>Languages</label>
           <div class="fhint" style="margin-bottom:10px;">Languages you can work in.</div>
@@ -550,10 +537,82 @@ const SKILLS = [
   'Project Coordination','Cross-functional Collaboration','US Business Culture',
 ];
 
+const colombiaLocations = {
+  "Amazonas": ["Leticia", "Puerto Nariño"],
+  "Antioquia": ["Medellín", "Abejorral", "Apartadó", "Bello", "Caldas", "Caucasia", "Copacabana", "El Carmen de Viboral", "Envigado", "Girardota", "Itagüí", "La Ceja", "La Estrella", "Marinilla", "Rionegro", "Sabaneta", "Santa Fe de Antioquia", "Turbo"],
+  "Arauca": ["Arauca", "Arauquita", "Saravena", "Tame"],
+  "Atlántico": ["Barranquilla", "Baranoa", "Galapa", "Malambo", "Puerto Colombia", "Sabanalarga", "Soledad"],
+  "Bogotá D.C.": ["Bogotá"],
+  "Bolívar": ["Cartagena", "Arjona", "El Carmen de Bolívar", "Magangué", "Mompox", "Turbaco"],
+  "Boyacá": ["Tunja", "Chiquinquirá", "Duitama", "Paipa", "Sogamoso", "Villa de Leyva"],
+  "Caldas": ["Manizales", "Aguadas", "Chinchiná", "La Dorada", "Riosucio", "Villamaría"],
+  "Caquetá": ["Florencia", "El Doncello", "Puerto Rico", "San Vicente del Caguán"],
+  "Casanare": ["Yopal", "Aguazul", "Paz de Ariporo", "Villanueva"],
+  "Cauca": ["Popayán", "El Tambo", "Puerto Tejada", "Santander de Quilichao"],
+  "Cesar": ["Valledupar", "Aguachica", "Bosconia", "Codazzi"],
+  "Chocó": ["Quibdó", "Istmina", "Nuquí", "Tadó"],
+  "Córdoba": ["Montería", "Cereté", "Lorica", "Sahagún"],
+  "Cundinamarca": ["Chía", "Cajicá", "Facatativá", "Fusagasugá", "Girardot", "Madrid", "Mosquera", "Soacha", "Tocancipá", "Zipaquirá"],
+  "Guainía": ["Inírida"],
+  "Guaviare": ["San José del Guaviare", "Calamar", "El Retorno", "Miraflores"],
+  "Huila": ["Neiva", "Garzón", "La Plata", "Pitalito"],
+  "La Guajira": ["Riohacha", "Maicao", "San Juan del Cesar", "Uribia"],
+  "Magdalena": ["Santa Marta", "Ciénaga", "El Banco", "Fundación"],
+  "Meta": ["Villavicencio", "Acacías", "Granada", "Puerto López"],
+  "Nariño": ["Pasto", "Ipiales", "Tumaco", "Túquerres"],
+  "Norte de Santander": ["Cúcuta", "Ocaña", "Pamplona", "Villa del Rosario"],
+  "Putumayo": ["Mocoa", "Orito", "Puerto Asís", "Valle del Guamuez"],
+  "Quindío": ["Armenia", "Calarcá", "La Tebaida", "Montenegro", "Quimbaya"],
+  "Risaralda": ["Pereira", "Dosquebradas", "La Virginia", "Santa Rosa de Cabal"],
+  "San Andrés y Providencia": ["San Andrés", "Providencia"],
+  "Santander": ["Bucaramanga", "Barrancabermeja", "Floridablanca", "Girón", "Piedecuesta", "San Gil"],
+  "Sucre": ["Sincelejo", "Corozal", "Sampués", "Tolú"],
+  "Tolima": ["Ibagué", "Espinal", "Honda", "Melgar"],
+  "Valle del Cauca": ["Cali", "Buga", "Buenaventura", "Cartago", "Jamundí", "Palmira", "Tuluá", "Yumbo"],
+  "Vaupés": ["Mitú"],
+  "Vichada": ["Puerto Carreño", "La Primavera", "Santa Rosalía"]
+};
+
+function populateLocationSelects(selectedDept, selectedCity) {
+  const deptSel = document.getElementById('f-department');
+  const citySel = document.getElementById('f-city');
+  if (!deptSel || !citySel) return;
+  const depts = Object.keys(colombiaLocations);
+  const dept = depts.includes(selectedDept) ? selectedDept : depts[0];
+  deptSel.innerHTML = depts.map(d => `<option value="${escapeHtml(d)}" ${d === dept ? 'selected' : ''}>${escapeHtml(d)}</option>`).join('');
+  const cities = colombiaLocations[dept] || [];
+  const city = cities.includes(selectedCity) ? selectedCity : cities[0];
+  citySel.innerHTML = cities.map(c => `<option value="${escapeHtml(c)}" ${c === city ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('');
+}
+
+window.onDepartmentChange = function() {
+  const citySel = document.getElementById('f-city');
+  const cities = colombiaLocations[document.getElementById('f-department').value] || [];
+  citySel.innerHTML = cities.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+};
+
+function stripAccents(s) {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+// Best-effort match of a free-text CV location (e.g. "Medellin, Colombia") to
+// our department/city catalog, so the dropdowns can be pre-filled.
+function matchLocationFromText(text) {
+  if (!text) return null;
+  const norm = stripAccents(text);
+  for (const [dept, cities] of Object.entries(colombiaLocations)) {
+    for (const city of cities) {
+      if (norm.includes(stripAccents(city))) return { department: dept, city };
+    }
+  }
+  return null;
+}
+
 let opening       = null;
 let selectedSkills= new Set();
 let languagesList = [];
 let certificationsList = [];
+let experienceList = [];
 let cvFile        = null;
 let existingCvUrl = null;
 let ynAnswers     = {};
@@ -671,8 +730,11 @@ async function init() {
 
   // Render skills
   renderSkills();
+  if (!experienceList.length) experienceList.push({ company: '', title: '', from: '', to: '', contact: '' });
+  renderExperienceList();
   renderLanguagesList();
   renderCertificationsList();
+  populateLocationSelects();
 
   document.getElementById('page-loading').style.display  = 'none';
   document.getElementById('opening-view').style.display  = 'block';
@@ -971,22 +1033,18 @@ function prefillCandidate(candidate) {
   const legacyCurrency = candidate.expectedSalaryCurrency || candidate.salaryCurrency || 'USD';
   setField('f-expected-salary-usd', candidate.expectedSalaryUSD || (legacyCurrency === 'USD' ? legacyAmount : undefined));
   setField('f-expected-salary-cop', candidate.expectedSalaryCOP || (legacyCurrency === 'COP' ? legacyAmount : undefined));
+  populateLocationSelects(candidate.locationDepartment, candidate.locationCity || candidate.city);
+  setField('f-english', candidate.englishLevel || candidate.english);
   setField('f-linkedin', candidate.linkedin);
 
   const exp = Array.isArray(candidate.experience) ? candidate.experience : [];
-  exp.slice(0, 2).forEach((item, idx) => {
-    const prefix = 'e' + (idx + 1);
-    setField(prefix + '-co', item.company);
-    setField(prefix + '-title', item.title);
-    setField(prefix + '-from', item.from);
-    if (item.to === 'present') {
-      document.getElementById(prefix + '-curr').checked = true;
-      window.toggleCurr(prefix);
-    } else {
-      setField(prefix + '-to', item.to);
-    }
-    setField(prefix + '-contact', item.contact);
-  });
+  if (exp.length) {
+    experienceList = exp.map(item => ({
+      company: item.company || '', title: item.title || '',
+      from: item.from || '', to: item.to || '', contact: item.contact || '',
+    }));
+    renderExperienceList();
+  }
 
   if (Array.isArray(candidate.skills)) {
     selectedSkills = new Set(candidate.skills.filter(skill => SKILLS.includes(skill)).slice(0, 20));
@@ -1367,7 +1425,6 @@ async function parseCvAndFill(file) {
 
 function applyParsedToForm(p) {
   const filled = [];
-  const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
 
   // ── Section 1: Profile ──────────────────────────────────────────────────
   if (p.name) {
@@ -1384,22 +1441,21 @@ function applyParsedToForm(p) {
     const pEl = document.getElementById('f-phone');
     if (pEl && !pEl.value) { pEl.value = p.phone; filled.push('phone'); }
   }
+  if (p.city) {
+    const loc = matchLocationFromText(p.city);
+    if (loc) { populateLocationSelects(loc.department, loc.city); filled.push('location'); }
+  }
 
-  // ── Section 2: Work experience (positions 1 and 2) ──────────────────────
+  // ── Section 3: Work experience (all parsed positions) ────────────────────
   const work = Array.isArray(p.workHistory) ? p.workHistory : [];
-  const fillWork = (prefix, w) => {
-    set(prefix + '-co',    w.company);
-    set(prefix + '-title', w.title);
-    set(prefix + '-from',  w.from);
-    if (w.to === 'present') {
-      const cb = document.getElementById(prefix + '-curr');
-      if (cb) { cb.checked = true; toggleCurr(prefix); }
-    } else {
-      set(prefix + '-to', w.to);
-    }
-  };
-  if (work[0]) { fillWork('e1', work[0]); filled.push(`${work.length} role${work.length !== 1 ? 's' : ''}`); }
-  if (work[1]) fillWork('e2', work[1]);
+  if (work.length) {
+    experienceList = work.map(w => ({
+      company: w.company || '', title: w.title || '',
+      from: w.from || '', to: w.to || '', contact: '',
+    }));
+    renderExperienceList();
+    filled.push(`${work.length} role${work.length !== 1 ? 's' : ''}`);
+  }
 
   // ── Current role — prefill from most recent work history ────────────────
   if (work[0]?.title) {
@@ -1494,12 +1550,44 @@ window.addCertificationRow = function() {
   renderCertificationsList();
 };
 
-// ── Experience ────────────────────────────────────────────────────────────
-window.toggleCurr = prefix => {
-  const checked = document.getElementById(prefix+'-curr').checked;
-  const toEl = document.getElementById(prefix+'-to');
-  toEl.disabled = checked; toEl.style.opacity = checked ? '.4' : '1';
-  if (checked) toEl.value = '';
+// ── Experience list ───────────────────────────────────────────────────────
+function renderExperienceList() {
+  const container = document.getElementById('experience-list');
+  if (!container) return;
+  container.innerHTML = '';
+  if (!experienceList.length) {
+    container.innerHTML = '<div class="list-empty">No experience added yet.</div>';
+  }
+  experienceList.forEach((exp, idx) => {
+    const card = document.createElement('div');
+    card.className = 'exp-card';
+    const req = idx === 0 ? '<span class="req">*</span>' : '';
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+        <div class="exp-num">Position ${idx + 1}${idx === 0 ? ' — most recent' : ''}</div>
+        ${experienceList.length > 1 ? '<button type="button" class="list-row-remove" aria-label="Remove position">✕</button>' : ''}
+      </div>
+      <div class="field"><label>Company name ${req}</label><input type="text" data-k="company" placeholder="e.g. Acme SaaS Inc." value="${escapeHtml(exp.company || '')}">${idx === 0 ? '<div class="ferr" id="err-e1-co">Required</div>' : ''}</div>
+      <div class="field"><label>Your title ${req}</label><input type="text" data-k="title" placeholder="e.g. Customer Success Manager" value="${escapeHtml(exp.title || '')}">${idx === 0 ? '<div class="ferr" id="err-e1-title">Required</div>' : ''}</div>
+      <div class="field-row">
+        <div class="field"><label>Start date ${req}</label><input type="month" data-k="from" value="${escapeHtml(exp.from || '')}">${idx === 0 ? '<div class="ferr" id="err-e1-from">Required</div>' : ''}</div>
+        <div class="field"><label>End date</label><input type="month" data-k="to" placeholder="Leave blank if current" value="${exp.to === 'present' ? '' : escapeHtml(exp.to || '')}" ${exp.to === 'present' ? 'disabled style="opacity:.4"' : ''}><label class="curr-toggle" style="margin-top:7px;"><input type="checkbox" data-k="current" ${exp.to === 'present' ? 'checked' : ''}><span>I currently work here</span></label></div>
+      </div>
+      <div class="field"><label>Verification contact</label><input type="email" data-k="contact" placeholder="hr@company.com" value="${escapeHtml(exp.contact || '')}"><div class="fhint">Optional — helps us verify your tenure quickly.</div></div>`;
+    card.querySelectorAll('input[data-k="company"], input[data-k="title"], input[data-k="from"], input[data-k="to"], input[data-k="contact"]').forEach(inp => {
+      inp.addEventListener('input', e => { experienceList[idx][e.target.dataset.k] = e.target.value; });
+    });
+    card.querySelector('input[data-k="current"]')?.addEventListener('change', e => {
+      experienceList[idx].to = e.target.checked ? 'present' : '';
+      renderExperienceList();
+    });
+    card.querySelector('.list-row-remove')?.addEventListener('click', () => { experienceList.splice(idx, 1); renderExperienceList(); });
+    container.appendChild(card);
+  });
+}
+window.addExperienceRow = function() {
+  experienceList.push({ company: '', title: '', from: '', to: '', contact: '' });
+  renderExperienceList();
 };
 
 // ── Validation ────────────────────────────────────────────────────────────
@@ -1522,9 +1610,10 @@ function validateStep(step) {
     if (!usd && !cop) { showErr('err-expected-salary'); ok=false; } else clearErr('err-expected-salary');
   }
   if (step === 3) {
-    if (!document.getElementById('e1-co').value.trim())    { showErr('err-e1-co'); ok=false; } else clearErr('err-e1-co');
-    if (!document.getElementById('e1-title').value.trim()) { showErr('err-e1-title'); ok=false; } else clearErr('err-e1-title');
-    if (!document.getElementById('e1-from').value)         { showErr('err-e1-from'); ok=false; } else clearErr('err-e1-from');
+    const exp0 = experienceList[0] || {};
+    if (!exp0.company?.trim()) { showErr('err-e1-co'); ok=false; } else clearErr('err-e1-co');
+    if (!exp0.title?.trim())   { showErr('err-e1-title'); ok=false; } else clearErr('err-e1-title');
+    if (!exp0.from)            { showErr('err-e1-from'); ok=false; } else clearErr('err-e1-from');
     if (selectedSkills.size < 5 || selectedSkills.size > 20) { showErr('err-skills'); ok=false; } else clearErr('err-skills');
   }
   if (step === 4) {
@@ -1756,12 +1845,16 @@ window.submitApp = async function() {
     currentRole: document.getElementById('f-current-role').value.trim(),
     expectedSalaryUSD: Number(document.getElementById('f-expected-salary-usd').value || 0) || null,
     expectedSalaryCOP: Number(document.getElementById('f-expected-salary-cop').value || 0) || null,
+    department: document.getElementById('f-department').value,
+    city:       document.getElementById('f-city').value,
+    location:   [document.getElementById('f-city').value, document.getElementById('f-department').value].filter(Boolean).join(', '),
+    locationId: `${stripAccents(document.getElementById('f-city').value).replace(/[^a-z0-9]+/g, '-')}-co`,
+    english:    document.getElementById('f-english').value,
     linkedin:   document.getElementById('f-linkedin').value.trim(),
     cvUrl,
-    experience: [
-      { company: document.getElementById('e1-co').value.trim(), title: document.getElementById('e1-title').value.trim(), from: document.getElementById('e1-from').value, to: document.getElementById('e1-curr').checked ? 'present' : document.getElementById('e1-to').value, contact: document.getElementById('e1-contact').value.trim() },
-      { company: document.getElementById('e2-co').value.trim(), title: document.getElementById('e2-title').value.trim(), from: document.getElementById('e2-from').value, to: document.getElementById('e2-curr').checked ? 'present' : document.getElementById('e2-to').value, contact: document.getElementById('e2-contact').value.trim() },
-    ],
+    experience: experienceList
+      .map(exp => ({ company: (exp.company || '').trim(), title: (exp.title || '').trim(), from: exp.from || '', to: exp.to || '', contact: (exp.contact || '').trim() }))
+      .filter(exp => exp.company || exp.title || exp.from || exp.to || exp.contact),
     skills: [...selectedSkills],
     languages: languagesList.map(l => l.trim()).filter(Boolean),
     certifications: certificationsList.filter(c => c.name && c.name.trim()).map(c => ({ name: c.name.trim(), issuer: (c.issuer || '').trim(), date: (c.date || '').trim() })),

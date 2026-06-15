@@ -1,0 +1,32 @@
+// Same-origin proxy for Admin's branded email API.
+//
+// Browser fetches straight to https://admin.nearwork.co/api/send-email from
+// jobs.nearwork.co are cross-origin and can be silently dropped by ad
+// blockers / browser tracking protection. Routing through this serverless
+// function keeps the call same-origin from the browser's perspective and
+// forwards it server-to-server instead.
+
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST');
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const { to, templateId, data } = req.body || {};
+  if (!to || !templateId) {
+    return res.status(400).json({ error: 'Missing required fields: to, templateId' });
+  }
+
+  try {
+    const adminApiUrl = process.env.EMAIL_API_URL || 'https://admin.nearwork.co/api/send-email';
+    const response = await fetch(adminApiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to, templateId, data: data || {} })
+    });
+    const result = await response.json().catch(() => ({}));
+    return res.status(response.status).json(result);
+  } catch (e) {
+    return res.status(502).json({ ok: false, error: e.message || 'Failed to reach email service' });
+  }
+}

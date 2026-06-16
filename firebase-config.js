@@ -23,10 +23,14 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-initializeAppCheck(app, {
-  provider: new ReCaptchaV3Provider('6LdijCltAAAAA07O_nBCe-h2keUYjCnjrVRCksqi'),
-  isTokenAutoRefreshEnabled: true,
-});
+try {
+  initializeAppCheck(app, {
+    provider: new ReCaptchaV3Provider('6LdijCltAAAAA07O_nBCe-h2keUYjCnjrVRCksqi'),
+    isTokenAutoRefreshEnabled: true,
+  });
+} catch (e) {
+  console.warn('App Check init skipped:', e?.message);
+}
 const db  = getFirestore(app);
 const storage = getStorage(app);
 const auth = getAuth(app);

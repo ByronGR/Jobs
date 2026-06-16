@@ -237,6 +237,8 @@ function mapOpening(op) {
     contract: op.contract || '',
     tz: op.tz || op.timezone || '',
     isClosed: ['paused','cancelled','filled'].includes(op.status),
+    hideLocation: !!op.hideLocation,
+    hideBenefits: !!op.hideBenefits,
     about, responsibilities, requirements, niceToHave, benefits,
   };
 }
@@ -431,9 +433,8 @@ function JobCard({ job, saved, applied, onOpen, onToggleSave, isLoggedIn, onSign
       <div style={{ borderTop:'1px solid var(--border)', paddingTop:16, display:'flex', justifyContent:'space-between', alignItems:'flex-end', gap:12 }}>
         <div style={{ display:'flex', flexDirection:'column', gap:4, minWidth:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:5, fontSize:13, color:'var(--muted)' }}>
-            <Icon name="map-pin" size={13} />
-            <span style={{ whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{job.location}</span>
-            {job.workType && <><span>·</span><span>{job.workType}</span></>}
+            {!job.hideLocation && <><Icon name="map-pin" size={13} /><span style={{ whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{job.location}</span>{job.workType && <span>·</span>}</>}
+            {job.workType && <span>{job.workType}</span>}
           </div>
           {job.experience && <div style={{ fontSize:12, color:'var(--muted2)', fontWeight:500 }}>{job.experience}</div>}
           <div style={{ fontSize:14, fontWeight:800, color:'var(--accent-dark)', letterSpacing:'-.01em' }}>{job.salary}</div>
@@ -499,7 +500,7 @@ function JobDetail({ job, saved, applied, onBack, onToggleSave, isLoggedIn, onSi
               {job.title}
             </h1>
             <div style={{ display:'flex', flexWrap:'wrap', gap:16, marginTop:18, fontSize:14, color:'var(--muted)' }}>
-              <span style={{ display:'inline-flex', alignItems:'center', gap:6 }}><Icon name="map-pin" size={14} />{job.location}</span>
+              {!job.hideLocation && <span style={{ display:'inline-flex', alignItems:'center', gap:6 }}><Icon name="map-pin" size={14} />{job.location}</span>}
               {job.workType && <span style={{ display:'inline-flex', alignItems:'center', gap:6 }}><Icon name="briefcase" size={14} />{job.workType}</span>}
               {job.experience && <span style={{ display:'inline-flex', alignItems:'center', gap:6 }}><Icon name="trending-up" size={14} />{job.experience}</span>}
               {job.contract && <span style={{ display:'inline-flex', alignItems:'center', gap:6 }}><Icon name="file-text" size={14} />{job.contract}</span>}
@@ -539,7 +540,7 @@ function JobDetail({ job, saved, applied, onBack, onToggleSave, isLoggedIn, onSi
               <CheckList items={job.niceToHave} muted />
             </div>
           )}
-          {job.benefits.length > 0 && (
+          {job.benefits.length > 0 && !job.hideBenefits && (
             <div className="nw-detail-section">
               <div className="nw-detail-section-title">Benefits &amp; perks</div>
               <div className="nw-benefits-grid">

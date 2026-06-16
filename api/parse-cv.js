@@ -32,6 +32,21 @@ export default async function handler(req, res) {
     return res.status(400).json({ ok: false, error: "Missing field: data (base64 file)" });
   }
 
+  const ALLOWED_MIME_TYPES = new Set([
+    "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/msword",
+  ]);
+  const normalizedMime = mimeType.split(";")[0].trim().toLowerCase();
+  if (!ALLOWED_MIME_TYPES.has(normalizedMime)) {
+    return res.status(400).json({ ok: false, error: "Only PDF and Word documents (.pdf, .doc, .docx) are accepted." });
+  }
+
+  // base64 overhead is ~33%, so 13_981_013 chars ≈ 10 MB raw file
+  if (base64.length > 13_981_013) {
+    return res.status(400).json({ ok: false, error: "File is too large. Maximum size is 10 MB." });
+  }
+
   try {
     const fileBuffer = Buffer.from(base64, "base64");
 

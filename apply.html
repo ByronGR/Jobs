@@ -534,7 +534,7 @@ input:focus,textarea:focus,select:focus{outline:none;}
 </div><!-- /nw-page -->
 
 <script type="module">
-import { getOpening, getCandidateByEmail, signInCandidate, signInCandidateWithGoogle, createCandidateAuth, submitApplication, uploadCV, getCandidateSession, saveCandidateSession, waitForAuthReady, hasAppliedToOpening, signOutCandidate, clearCandidateSession, getCurrentUserProfile, isCandidatePortalUser, syncCandidateToHubSpot, subscribeToAuthChanges, clearUserCache, reloadCurrentUser } from './firebase-config.js';
+import { getOpening, getCandidateByEmail, signInCandidate, signInCandidateWithGoogle, createCandidateAuth, submitApplication, uploadCV, getCandidateSession, saveCandidateSession, waitForAuthReady, hasAppliedToOpening, signOutCandidate, clearCandidateSession, getCurrentUserProfile, isCandidatePortalUser, syncCandidateToHubSpot, subscribeToAuthChanges, clearUserCache, reloadCurrentUser, getCurrentIdToken } from './firebase-config.js';
 
 // ── Extract opening code from URL: /apply/open-csm-4x8b ──────────────────
 const pathParts = window.location.pathname.split('/').filter(Boolean);
@@ -1791,9 +1791,13 @@ async function submitApplicationToServer(appData) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 25000);
   try {
+    const idToken = await getCurrentIdToken();
     const res = await fetch('/api/submit-application', {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+      },
       body: JSON.stringify(appData),
       signal: controller.signal
     });

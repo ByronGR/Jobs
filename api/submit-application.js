@@ -1,4 +1,5 @@
 import admin from 'firebase-admin';
+import { checkRateLimit } from './_lib/rate-limit.js';
 
 const PROJECT_ID = process.env.FIREBASE_PROJECT_ID || 'nearwork-97e3c';
 
@@ -34,6 +35,20 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Verify Firebase ID token if provided; use decoded UID to prevent spoofed ownerUid.
+    const authHeader = String(req.headers?.authorization || '').trim();
+    const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+    let verifiedUid = null;
+    if (idToken) {
+      initAdmin();
+      try {
+        const decoded = await admin.auth().verifyIdToken(idToken);
+        verifiedUid = decoded.uid;
+      } catch {
+        return res.status(401).json({ ok: false, error: 'Invalid or expired session' });
+      }
+    }
+
     initAdmin();
     const db = admin.firestore();
     const appData = req.body || {};
@@ -59,6 +74,13 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Opening code is required' });
     }
 
+    // Rate limit: 5 submissions per email per 24 hours
+    const rl = await checkRateLimit({ key: `submit:${email}`, limit: 5, windowMs: 24 * 60 * 60 * 1000 }).catch(() => ({ allowed: true }));
+    if (!rl.allowed) {
+      res.setHeader('Retry-After', String(rl.retryAfter ?? 86400));
+      return res.status(429).json({ ok: false, error: 'Too many submission attempts. Please try again later.' });
+    }
+
     const now = admin.firestore.FieldValue.serverTimestamp();
     // Guard: only accept properly formatted CAND-XXXXXX codes.
     // Firebase Auth UIDs and other strings are discarded so we never key
@@ -66,7 +88,8 @@ export default async function handler(req, res) {
     let candidateId = /^CAND-/i.test(appData.candidateId || '') ? appData.candidateId : '';
     let candidateCode = /^CAND-/i.test(appData.candidateCode || '') ? appData.candidateCode : '';
     let existingCandidate = null;
-    const ownerUid = appData.ownerUid || appData.authUid || null;
+    // Use server-verified UID if auth token was provided; never trust body-provided UID.
+    const ownerUid = verifiedUid || (idToken ? null : (appData.ownerUid || appData.authUid || null));
     let existingUser = {};
 
     if (await hasApplied({ db, uid: ownerUid, email, openingCode: normalizeCode(openingCode) })) {
@@ -335,10 +358,7 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error('submit-application error:', error);
-    return res.status(500).json({
-      error: 'Application submit failed',
-      message: error.message || 'Unknown error'
-    });
+    return res.status(500).json({ error: 'Application submit failed' });
   }
 }
 

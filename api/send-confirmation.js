@@ -65,7 +65,8 @@ export default async function handler(req, res) {
 
   const data = await resendResponse.json().catch(() => ({}));
   if (!resendResponse.ok) {
-    return res.status(resendResponse.status).json({ error: 'Resend failed', details: data });
+    console.error('[send-confirmation] Resend error:', data);
+    return res.status(resendResponse.status).json({ error: 'Failed to send confirmation email' });
   }
 
   return res.status(200).json({ ok: true, id: data.id });

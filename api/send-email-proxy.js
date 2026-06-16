@@ -12,9 +12,13 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  const ALLOWED_TEMPLATES = new Set(['account_created', 'job_applied']);
   const { to, templateId, data } = req.body || {};
   if (!to || !templateId) {
     return res.status(400).json({ error: 'Missing required fields: to, templateId' });
+  }
+  if (!ALLOWED_TEMPLATES.has(templateId)) {
+    return res.status(400).json({ error: 'Invalid templateId' });
   }
 
   try {

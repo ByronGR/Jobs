@@ -38,9 +38,42 @@ function isUnknownHubspotProperty(body = {}) {
   return msg.includes('property') && (msg.includes('does not exist') || msg.includes('unknown'));
 }
 
+import admin from 'firebase-admin';
+
+const PROJECT_ID = process.env.FIREBASE_PROJECT_ID || 'nearwork-97e3c';
+
+function initAdmin() {
+  if (admin.apps.length) return admin.app();
+  if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+    return admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+  }
+  if (process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
+    return admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId: PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      }),
+    });
+  }
+  throw new Error('Firebase Admin credentials are not configured');
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ ok: false, error: 'Method not allowed' });
+  }
+
+  const authHeader = String(req.headers?.authorization || '').trim();
+  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+  if (!idToken) return res.status(401).json({ ok: false, error: 'Authentication required' });
+
+  initAdmin();
+  try {
+    await admin.auth().verifyIdToken(idToken);
+  } catch {
+    return res.status(401).json({ ok: false, error: 'Invalid or expired session' });
   }
 
   const token = process.env.HUBSPOT_ACCESS_TOKEN;

@@ -338,9 +338,13 @@ export async function syncCandidateToHubSpot(candidate) {
   const email = candidate?.email;
   if (!email) return { ok: false, skipped: true };
   try {
+    const idToken = await auth.currentUser?.getIdToken().catch(() => '');
     const response = await fetch('/api/sync-hubspot-candidate', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+      },
       body: JSON.stringify({ candidate: { ...candidate, email } })
     });
     return response.json().catch(() => ({ ok: false }));
@@ -717,6 +721,10 @@ export async function uploadCV(file, candCode) {
   const storageRef=ref(storage,'cvs/'+candCode+'/cv-'+Date.now()+'.'+ext);
   const upload = await withTimeout(uploadBytes(storageRef,file), 'CV upload', 20000);
   return withTimeout(getDownloadURL(upload.ref), 'CV URL', 10000);
+}
+
+export async function getCurrentIdToken() {
+  return auth.currentUser?.getIdToken().catch(() => '') ?? '';
 }
 
 export { db, storage, auth, serverTimestamp, doc, setDoc, getDoc, collection, query, where, getDocs, addDoc };

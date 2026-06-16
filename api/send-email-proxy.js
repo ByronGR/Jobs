@@ -23,9 +23,13 @@ export default async function handler(req, res) {
 
   try {
     const adminApiUrl = process.env.EMAIL_API_URL || 'https://admin.nearwork.co/api/send-email';
+    const emailSecret = process.env.INTERNAL_EMAIL_SECRET || '';
     const response = await fetch(adminApiUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(emailSecret ? { 'X-Internal-Secret': emailSecret } : {}),
+      },
       body: JSON.stringify({ to, templateId, data: data || {} })
     });
     const result = await response.json().catch(() => ({}));

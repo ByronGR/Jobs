@@ -1532,9 +1532,13 @@ async function parseCvAndFill(file) {
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
+    const cvIdToken = await getCurrentIdToken();
     const resp = await fetch('/api/parse-cv', {
       method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(cvIdToken ? { Authorization: `Bearer ${cvIdToken}` } : {}),
+      },
       body:    JSON.stringify({ data: base64, filename: file.name, mimeType: file.type || 'application/octet-stream' }),
     });
     if (!resp.ok) throw new Error('api-error');

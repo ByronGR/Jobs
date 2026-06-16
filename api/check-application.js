@@ -119,25 +119,33 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  const authHeader = String(req.headers?.authorization || '').trim();
+  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+  if (!idToken) {
+    return res.status(401).json({ ok: false, applied: false, error: 'Authentication required' });
+  }
+
   try {
     initAdmin();
     const db = admin.firestore();
-    const uid = String(req.query.uid || '').trim();
-    const email = String(req.query.email || '').trim().toLowerCase();
     const openingCode = normalizeCode(req.query.openingCode || req.query.code || '');
-
     if (!openingCode) return res.status(400).json({ error: 'Opening code is required' });
-    if (!uid && !email) return res.status(400).json({ error: 'Candidate uid or email is required' });
+
+    // Verify the token and scope the check to the requesting user only
+    let decoded;
+    try {
+      decoded = await admin.auth().verifyIdToken(idToken);
+    } catch {
+      return res.status(401).json({ ok: false, applied: false, error: 'Invalid or expired session' });
+    }
+
+    const uid = decoded.uid;
+    const email = String(decoded.email || '').trim().toLowerCase();
 
     const applied = await hasApplied({ db, uid, email, openingCode });
     return res.status(200).json({ ok: true, applied });
   } catch (error) {
     console.error('check-application error:', error);
-    return res.status(500).json({
-      ok: false,
-      applied: false,
-      error: 'Application check failed',
-      message: error.message || 'Unknown error'
-    });
+    return res.status(500).json({ ok: false, applied: false, error: 'Application check failed' });
   }
 }

@@ -235,9 +235,12 @@ export async function hasAppliedToOpening(uid, openingCode, email = '') {
   const normalizedEmail = String(email || auth.currentUser?.email || '').trim().toLowerCase();
   try {
     const params = new URLSearchParams({ openingCode: code });
-    if (uid) params.set('uid', uid);
-    if (normalizedEmail) params.set('email', normalizedEmail);
-    const response = await withTimeout(fetch('/api/check-application?' + params.toString()), 'server duplicate check', 7000);
+    const idToken = await auth.currentUser?.getIdToken().catch(() => '');
+    const headers = idToken ? { Authorization: `Bearer ${idToken}` } : {};
+    const response = await withTimeout(
+      fetch('/api/check-application?' + params.toString(), { headers }),
+      'server duplicate check', 7000
+    );
     if (response.ok) {
       const data = await response.json().catch(() => ({}));
       if (data.applied) return true;

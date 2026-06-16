@@ -630,6 +630,20 @@ function AuthModal({ mode, onClose, onSuccess, onSwitchMode }) {
   const setOk = (m) => { setMsg(m); setIsError(false); };
   const setErr = (m) => { setMsg(m); setIsError(true); };
 
+  const handleForgotReset = async () => {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setErr('Enter your email above, then click Forgot password.'); return; }
+    setLoading(true);
+    try {
+      await fetch('/api/send-reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+    } catch {}
+    setOk(`If ${email} has an account, a reset link is on its way.`);
+    setLoading(false);
+  };
+
   const friendlyError = (e) => {
     const c = e?.code||'';
     if (c.includes('unauthorized-domain')) return 'Google sign-in needs jobs.nearwork.co in Firebase Auth authorized domains.';
@@ -747,6 +761,11 @@ function AuthModal({ mode, onClose, onSuccess, onSwitchMode }) {
             <input type={showPassword?'text':'password'} placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={handleKey} autoFocus={step==='password'} autoComplete={isSignup?'new-password':'current-password'} />
             <button type="button" className="nw-pw-toggle" aria-label={showPassword?'Hide password':'Show password'} onClick={()=>setShowPassword(v=>!v)}><Icon name={showPassword?'eye-off':'eye'} size={16} color="var(--muted2)" /></button>
           </div>
+        )}
+        {!isSignup && step==='password' && (
+          <button type="button" onClick={handleForgotReset} disabled={loading} style={{ background:'none', border:'none', cursor:'pointer', fontSize:12, color:'var(--muted)', fontFamily:'inherit', textAlign:'right', width:'100%', padding:0, marginTop:-4, marginBottom:6 }}>
+            Forgot password?
+          </button>
         )}
         {isSignup && (
           <div className="nw-modal-field nw-pw-field">

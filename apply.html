@@ -508,7 +508,7 @@ input:focus,textarea:focus,select:focus{outline:none;}
     <p class="success-sub">Thanks for applying. You'll receive an email shortly with your confirmation. We'll review your application and keep in touch with next steps.</p>
     <div class="success-ref" id="success-ref">Reference: —</div>
     <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
-      <a href="https://talent.nearwork.co/dashboard" class="btn-talent">Go to your dashboard →</a>
+      <a href="https://talent.nearwork.co" class="btn-talent">Go to your dashboard →</a>
       <a href="/" class="btn-browse">← Browse more roles</a>
     </div>
   </div>
@@ -1267,7 +1267,8 @@ window.continueWithGoogle = async function() {
   const marketingConsent = document.getElementById('a-marketing')?.checked === true;
   msg.textContent = 'Opening Google sign-in…';
   try {
-    authUser = await signInCandidateWithGoogle();
+    const googleResult = await signInCandidateWithGoogle();
+    authUser = googleResult.user;
     // Show a brief identity confirmation so the user can see which account
     // was used before the app takes any action.
     const displayName = authUser.displayName || '';
@@ -1299,8 +1300,7 @@ window.continueWithGoogle = async function() {
       firstName: authUser.displayName?.split(' ')[0] || '',
       lastName: authUser.displayName?.split(' ').slice(1).join(' ') || ''
     };
-    const isNewAccount = authUser.metadata?.creationTime && authUser.metadata.creationTime === authUser.metadata.lastSignInTime;
-    if (isNewAccount) {
+    if (googleResult.isNewUser) {
       sendCandidateAccountCreatedEmail(candidate).catch(() => null);
       if (marketingConsent) {
         syncCandidateToHubSpot({

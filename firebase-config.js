@@ -10,7 +10,7 @@ import {
 import {
   getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
   updateProfile, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence,
-  GoogleAuthProvider, signInWithPopup
+  GoogleAuthProvider, signInWithPopup, getAdditionalUserInfo
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
 const firebaseConfig = {
@@ -217,7 +217,8 @@ export async function signInCandidateWithGoogle() {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
   const credential = await withTimeout(signInWithPopup(auth, provider), 'google login', 30000);
-  return credential.user;
+  const isNewUser = getAdditionalUserInfo(credential)?.isNewUser === true;
+  return { user: credential.user, isNewUser };
 }
 
 export async function getCurrentUserProfile() {

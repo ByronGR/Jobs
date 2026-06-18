@@ -1,5 +1,4 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { initializeAppCheck, ReCaptchaV3Provider } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js';
 import {
   getFirestore, collection, query, where,
   getDocs, getDoc, doc, setDoc, addDoc, updateDoc, serverTimestamp, arrayUnion
@@ -10,7 +9,7 @@ import {
 import {
   getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
   updateProfile, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence,
-  GoogleAuthProvider, signInWithPopup, getAdditionalUserInfo
+  GoogleAuthProvider, signInWithPopup, getAdditionalUserInfo, signInWithCustomToken
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
 const firebaseConfig = {
@@ -23,14 +22,6 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-try {
-  initializeAppCheck(app, {
-    provider: new ReCaptchaV3Provider('6LdijCltAAAAA07O_nBCe-h2keUYjCnjrVRCksqi'),
-    isTokenAutoRefreshEnabled: true,
-  });
-} catch (e) {
-  console.warn('App Check init skipped:', e?.message);
-}
 const db  = getFirestore(app);
 const storage = getStorage(app);
 const auth = getAuth(app);
@@ -735,6 +726,10 @@ export async function uploadCV(file, candCode) {
 
 export async function getCurrentIdToken() {
   return auth.currentUser?.getIdToken().catch(() => '') ?? '';
+}
+
+export async function signInWithHandoffToken(customToken) {
+  return signInWithCustomToken(auth, customToken);
 }
 
 export { db, storage, auth, serverTimestamp, doc, setDoc, getDoc, collection, query, where, getDocs, addDoc };

@@ -537,13 +537,22 @@ input:focus,textarea:focus,select:focus{outline:none;}
 </div><!-- /nw-page -->
 
 <script type="module">
-import { getOpening, getCandidateByEmail, signInCandidate, signInCandidateWithGoogle, createCandidateAuth, submitApplication, uploadCV, getCandidateSession, saveCandidateSession, waitForAuthReady, hasAppliedToOpening, signOutCandidate, clearCandidateSession, getCurrentUserProfile, isCandidatePortalUser, syncCandidateToHubSpot, subscribeToAuthChanges, clearUserCache, reloadCurrentUser, getCurrentIdToken } from './firebase-config.js';
+import { getOpening, getCandidateByEmail, signInCandidate, signInCandidateWithGoogle, createCandidateAuth, submitApplication, uploadCV, getCandidateSession, saveCandidateSession, waitForAuthReady, hasAppliedToOpening, signOutCandidate, clearCandidateSession, getCurrentUserProfile, isCandidatePortalUser, syncCandidateToHubSpot, subscribeToAuthChanges, clearUserCache, reloadCurrentUser, getCurrentIdToken, signInWithHandoffToken } from './firebase-config.js';
 
 // ── Extract opening code from URL: /apply/open-csm-4x8b ──────────────────
 const pathParts = window.location.pathname.split('/').filter(Boolean);
 const codeRaw   = pathParts[pathParts.length - 1] || '';
 const codeParam = new URLSearchParams(window.location.search).get('code') || '';
 const CODE      = decodeURIComponent(codeParam || codeRaw).trim().toUpperCase();
+
+// Handle cross-domain auth handoff from talent.nearwork.co (?ct=<customToken>)
+const _ctParam = new URLSearchParams(window.location.search).get('ct');
+if (_ctParam) {
+  const _ctUrl = new URL(window.location.href);
+  _ctUrl.searchParams.delete('ct');
+  window.history.replaceState({}, '', _ctUrl.toString());
+  signInWithHandoffToken(_ctParam).catch(() => {});
+}
 
 // ── Skills catalog — used for autocomplete suggestions only; candidates can
 // also type and add any skill that isn't in this list. ─────────────────────

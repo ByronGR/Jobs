@@ -357,6 +357,9 @@ input:focus,textarea:focus,select:focus{outline:none;}
         </label>
       </div>
       <div class="quick-msg" id="account-msg"></div>
+      <div id="account-forgot" style="display:none;text-align:center;margin:-4px 0 6px;">
+        <button type="button" id="forgotPasswordBtn" style="background:none;border:none;color:#16a085;font-size:12.5px;cursor:pointer;text-decoration:underline;padding:0;">Forgot your password?</button>
+      </div>
       <div class="form-nav">
         <button class="btn-back" onclick="backToOpening()">← Back</button>
         <button class="btn-next" id="account-continue-btn" onclick="handleAccountContinue()">Continue →</button>
@@ -508,7 +511,7 @@ input:focus,textarea:focus,select:focus{outline:none;}
     <p class="success-sub">Thanks for applying. You'll receive an email shortly with your confirmation. We'll review your application and keep in touch with next steps.</p>
     <div class="success-ref" id="success-ref">Reference: —</div>
     <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
-      <a href="https://talent.nearwork.co" class="btn-talent">Go to your dashboard →</a>
+      <button type="button" onclick="goToDashboard()" class="btn-talent">Go to your dashboard →</button>
       <a href="/" class="btn-browse">← Browse more roles</a>
     </div>
   </div>
@@ -518,7 +521,7 @@ input:focus,textarea:focus,select:focus{outline:none;}
     <div style="font-size:48px;">✓</div>
     <h2>You already applied to this role</h2>
     <p>Your application is saved in your Nearwork talent profile. You can review your application status from your talent dashboard.</p>
-    <a href="https://talent.nearwork.co/applications" class="btn-talent">View your application in Talent →</a>
+    <button type="button" onclick="goToDashboard()" class="btn-talent">View your applications in Talent →</button>
     <a href="/" class="btn-browse">← Browse more roles</a>
   </div>
 
@@ -1075,6 +1078,7 @@ function showLoginStepForCandidate(candidate, email, message = 'We found your Ne
   document.getElementById('a-password').placeholder = 'Enter your password';
   document.getElementById('account-note').textContent = message;
   document.getElementById('account-continue-btn').textContent = 'Log in and continue →';
+  document.getElementById('account-forgot').style.display = '';
   const msg = document.getElementById('account-msg');
   msg.className = 'quick-msg show';
   msg.textContent = 'For security, please log in before applying.';
@@ -1159,6 +1163,7 @@ function resetAccountMode(clearEmail = true) {
   document.getElementById('account-note').textContent = 'Enter your email first. We will check whether you need to log in or create a profile.';
   document.getElementById('account-continue-btn').textContent = 'Continue →';
   document.getElementById('account-msg').classList.remove('show');
+  document.getElementById('account-forgot').style.display = 'none';
   document.getElementById('a-password').placeholder = 'Password';
   document.getElementById('a-password').value = '';
   document.getElementById('a-password2').value = '';
@@ -1863,17 +1868,61 @@ function trackConfirmationEmail(payload) {
 
 async function sendConfirmationEmail(payload) {
   try {
-    const response = await fetch('/api/send-confirmation', {
+    const firstName = (payload.candidateName || '').split(/\s+/)[0] || 'there';
+    const roleTitle = payload.openingTitle || payload.openingCode || 'this role';
+    const response = await fetch('/api/send-email-proxy', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(payload)
+      body: JSON.stringify({ to: payload.to, templateId: 'job_applied', data: { firstName, roleTitle } })
     });
-    const data = await response.json().catch(() => ({ ok:false, error:'Email endpoint returned non-JSON response' }));
+    const data = await response.json().catch(() => ({ ok:false, error:'non-JSON response' }));
     return { httpStatus: response.status, ...data };
   } catch(e) {
     return { ok:false, error:e.message || 'Email endpoint request failed' };
   }
 }
+
+window.goToDashboard = async function() {
+  try {
+    const user = await clientTimeout(waitForAuthReady(), 3000, null, 'auth for dashboard');
+    if (user) {
+      const idToken = await user.getIdToken();
+      const r = await fetch('https://talent.nearwork.co/api/auth-handoff', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + idToken, 'Content-Type': 'application/json' }
+      });
+      if (r.ok) {
+        const { customToken } = await r.json();
+        if (customToken) {
+          window.location.href = 'https://talent.nearwork.co?ct=' + encodeURIComponent(customToken);
+          return;
+        }
+      }
+    }
+  } catch(e) { /* fall through */ }
+  window.location.href = 'https://talent.nearwork.co';
+};
+
+document.getElementById('forgotPasswordBtn')?.addEventListener('click', async function() {
+  const email = document.getElementById('a-email').value.trim();
+  const msg = document.getElementById('account-msg');
+  msg.className = 'quick-msg show';
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    msg.textContent = 'Enter your email above first.';
+    return;
+  }
+  msg.textContent = 'Sending reset link…';
+  try {
+    await fetch('/api/send-reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    msg.textContent = 'If an account exists for ' + email + ', a password reset link is on its way.';
+  } catch(e) {
+    msg.textContent = 'Could not send the reset email. Please try again.';
+  }
+});
 
 async function submitApplicationWithServerBackup(appData) {
   try {

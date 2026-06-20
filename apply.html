@@ -1344,6 +1344,11 @@ window.continueWithGoogle = async function() {
     }
     await continueAfterAuth(authUser, candidate);
   } catch(e) {
+    console.error('[NW] Google sign-in failed', {
+      code: e?.code,
+      message: e?.message,
+      serverResponse: e?.customData?.serverResponse
+    });
     msg.innerHTML = '';
     msg.textContent = friendlyAuthError(e);
   }

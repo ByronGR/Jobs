@@ -737,6 +737,11 @@ function AuthModal({ mode, onClose, onSuccess, onSwitchMode }) {
       fb.saveCandidateSession(candidate);
       onSuccess(candidate);
     } catch(e) {
+      console.error('[NW] Google sign-in failed', {
+        code: e?.code,
+        message: e?.message,
+        serverResponse: e?.customData?.serverResponse
+      });
       setErr(friendlyError(e));
     } finally {
       setLoading(false);

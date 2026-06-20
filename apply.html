@@ -327,7 +327,8 @@ input:focus,textarea:focus,select:focus{outline:none;}
   <!-- ── Account gate ─────────────────────────────────────────────────── -->
   <div id="account-view" class="account-view">
     <section class="account-card">
-      <h2>Start your application</h2>
+      <div id="account-role-label" style="display:none;font-size:11px;font-weight:600;color:#16a085;letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px;"></div>
+      <h2 id="account-heading">Start your application</h2>
       <p>Enter your email first. If you already have a Nearwork account, we will ask for your password. If not, you can create your profile and continue.</p>
       <div class="account-note" id="account-note">Your profile keeps the basics ready for future openings.</div>
       <button type="button" class="google-account-btn" onclick="continueWithGoogle()">
@@ -982,7 +983,7 @@ async function sendCandidateAccountCreatedEmail(candidate) {
   if (!email) return;
   const name = [candidate?.firstName, candidate?.lastName].filter(Boolean).join(' ') || candidate?.name || '';
   try {
-    await fetch('/api/send-email-proxy', {
+    const res = await fetch('/api/send-email-proxy', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
@@ -995,6 +996,10 @@ async function sendCandidateAccountCreatedEmail(candidate) {
         }
       })
     });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      console.warn('account created email failed:', res.status, err?.error || '');
+    }
   } catch(e) {
     console.warn('account created email skipped:', e.message || e);
   }
@@ -1065,6 +1070,12 @@ window.showAccountStep = async function() {
   resetAccountMode(false);
   document.getElementById('opening-view').style.display = 'none';
   document.getElementById('account-view').style.display = 'block';
+  const roleLabel = document.getElementById('account-role-label');
+  if (roleLabel && opening?.title) {
+    roleLabel.textContent = opening.title;
+    roleLabel.style.display = '';
+    document.getElementById('account-heading').textContent = 'Apply for this role';
+  }
   window.scrollTo({top:0,behavior:'smooth'});
 };
 
@@ -1094,6 +1105,12 @@ function showLoginStepForCandidate(candidate, email, message = 'We found your Ne
   document.getElementById('opening-view').style.display = 'none';
   document.getElementById('app-form').style.display = 'none';
   document.getElementById('account-view').style.display = 'block';
+  const roleLabel = document.getElementById('account-role-label');
+  if (roleLabel && opening?.title) {
+    roleLabel.textContent = opening.title;
+    roleLabel.style.display = '';
+    document.getElementById('account-heading').textContent = 'Log in to continue';
+  }
   window.scrollTo({top:0,behavior:'smooth'});
   document.getElementById('a-password').focus();
 }

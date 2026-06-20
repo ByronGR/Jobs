@@ -569,6 +569,7 @@ export async function submitApplication(applicationData) {
     cvUrl: applicationData.cvUrl || null,
     skills: applicationData.skills || [],
     experience: applicationData.experience || [],
+    workHistory: applicationData.experience || [],
     languages: applicationData.languages || [],
     certifications: applicationData.certifications || [],
     applications: nextApplications,
@@ -578,7 +579,16 @@ export async function submitApplication(applicationData) {
     authUid: ownerUid,
     lastAppliedOpeningCode: openingCode,
     lastAppliedAt: now,
-    updatedAt: now
+    updatedAt: now,
+    onboarded: true,
+    targetRole: applicationData.currentRole || existingUser.targetRole || '',
+    salaryAmount: expectedSalaryUSD || expectedSalaryCOP || expectedSalaryAmount || null,
+    whatsapp: applicationData.phone || existingUser.whatsapp || '',
+    ...(applicationData.cvUrl ? {
+      activeCvName: applicationData.cvFileName || 'Resume',
+      activeCvId: applicationData.cvUrl,
+      cvLibrary: arrayUnion({ id: applicationData.cvUrl, name: applicationData.cvFileName || 'Resume', url: applicationData.cvUrl, uploadedAt: new Date().toISOString() })
+    } : {})
   };
   if (!existingUser.createdAt) userProfile.createdAt = now;
   await withTimeout(setDoc(userRef, userProfile, { merge:true }), 'candidate user profile save');

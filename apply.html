@@ -1989,6 +1989,7 @@ window.submitApp = async function() {
     english:    document.getElementById('f-english').value,
     linkedin:   document.getElementById('f-linkedin').value.trim(),
     cvUrl,
+    cvFileName: cvFile?.name || '',
     experience: experienceList
       .map(exp => ({ company: (exp.company || '').trim(), title: (exp.title || '').trim(), from: exp.from || '', to: exp.to || '', contact: (exp.contact || '').trim() }))
       .filter(exp => exp.company || exp.title || exp.from || exp.to || exp.contact),

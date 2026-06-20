@@ -7,8 +7,9 @@ import {
   getStorage, ref, uploadBytes, getDownloadURL
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 import {
-  getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
-  updateProfile, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence,
+  initializeAuth, browserLocalPersistence,
+  signInWithEmailAndPassword, createUserWithEmailAndPassword,
+  updateProfile, signOut, onAuthStateChanged,
   GoogleAuthProvider, signInWithRedirect, getRedirectResult, getAdditionalUserInfo,
   signInWithCustomToken
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
@@ -25,10 +26,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 const storage = getStorage(app);
-const auth = getAuth(app);
-const authPersistenceReady = setPersistence(auth, browserLocalPersistence).catch(e => {
-  console.warn('Firebase Auth persistence setup skipped:', e.code || e.message);
-});
+const auth = initializeAuth(app, { persistence: [browserLocalPersistence] });
+const authPersistenceReady = Promise.resolve();
 const CANDIDATE_SESSION_KEY = 'nearworkCandidate';
 
 function withTimeout(promise, label, ms = 15000) {

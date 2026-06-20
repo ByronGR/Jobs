@@ -15,7 +15,7 @@ import {
 
 const firebaseConfig = {
   apiKey: "AIzaSyApRNyW8PoP28E0x77dUB5jOgHuTqA2by4",
-  authDomain: "nearwork-97e3c.firebaseapp.com",
+  authDomain: "jobs.nearwork.co",
   projectId: "nearwork-97e3c",
   storageBucket: "nearwork-97e3c.firebasestorage.app",
   messagingSenderId: "145642656516",

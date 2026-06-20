@@ -7,10 +7,8 @@ import {
   getStorage, ref, uploadBytes, getDownloadURL
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 import {
-  initializeAuth, browserLocalPersistence,
-  signInWithEmailAndPassword, createUserWithEmailAndPassword,
+  getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
   updateProfile, signOut, onAuthStateChanged,
-  GoogleAuthProvider, signInWithRedirect, getRedirectResult, getAdditionalUserInfo,
   signInWithCustomToken
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
@@ -26,7 +24,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 const storage = getStorage(app);
-const auth = initializeAuth(app, { persistence: [browserLocalPersistence] });
+const auth = getAuth(app);
 const authPersistenceReady = Promise.resolve();
 const CANDIDATE_SESSION_KEY = 'nearworkCandidate';
 
@@ -203,26 +201,6 @@ export async function signInCandidate(email, password) {
   return credential.user;
 }
 
-export async function signInCandidateWithGoogle() {
-  await authPersistenceReady;
-  const provider = new GoogleAuthProvider();
-  provider.setCustomParameters({ prompt: 'select_account' });
-  await signInWithRedirect(auth, provider);
-  // Page navigates away — nothing below executes
-}
-
-export async function getGoogleRedirectResult() {
-  await authPersistenceReady;
-  try {
-    const credential = await getRedirectResult(auth);
-    if (!credential) return null;
-    const isNewUser = getAdditionalUserInfo(credential)?.isNewUser === true;
-    return { user: credential.user, isNewUser };
-  } catch (e) {
-    console.error('[NW] Google redirect error', { code: e?.code, message: e?.message });
-    throw e;
-  }
-}
 
 export async function getCurrentUserProfile() {
   const user = await waitForAuthReady();

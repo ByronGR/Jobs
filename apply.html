@@ -331,11 +331,6 @@ input:focus,textarea:focus,select:focus{outline:none;}
       <h2 id="account-heading">Start your application</h2>
       <p>Enter your email first. If you already have a Nearwork account, we will ask for your password. If not, you can create your profile and continue.</p>
       <div class="account-note" id="account-note">Your profile keeps the basics ready for future openings.</div>
-      <button type="button" class="google-account-btn" onclick="continueWithGoogle()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-        Continue with Google
-      </button>
-      <p style="text-align:center;font-size:11px;color:#888;margin:-2px 0 6px;line-height:1.4;">We only access your name and email address.</p>
       <div class="nw-divider">or</div>
       <div class="field-row">
         <div class="field"><label>First name <span class="req">*</span></label><input type="text" id="a-first" placeholder="María" autocomplete="given-name"><div class="ferr" id="err-a-first">Required</div></div>
@@ -538,7 +533,7 @@ input:focus,textarea:focus,select:focus{outline:none;}
 </div><!-- /nw-page -->
 
 <script type="module">
-import { getOpening, getCandidateByEmail, signInCandidate, signInCandidateWithGoogle, getGoogleRedirectResult, createCandidateAuth, submitApplication, uploadCV, getCandidateSession, saveCandidateSession, waitForAuthReady, hasAppliedToOpening, signOutCandidate, clearCandidateSession, getCurrentUserProfile, isCandidatePortalUser, syncCandidateToHubSpot, subscribeToAuthChanges, clearUserCache, reloadCurrentUser, getCurrentIdToken, signInWithHandoffToken } from './firebase-config.js';
+import { getOpening, getCandidateByEmail, signInCandidate, createCandidateAuth, submitApplication, uploadCV, getCandidateSession, saveCandidateSession, waitForAuthReady, hasAppliedToOpening, signOutCandidate, clearCandidateSession, getCurrentUserProfile, isCandidatePortalUser, syncCandidateToHubSpot, subscribeToAuthChanges, clearUserCache, reloadCurrentUser, getCurrentIdToken, signInWithHandoffToken } from './firebase-config.js';
 
 // ── Extract opening code from URL: /apply/open-csm-4x8b ──────────────────
 const pathParts = window.location.pathname.split('/').filter(Boolean);
@@ -764,10 +759,9 @@ window.logoutCandidate = async function() {
 
 function friendlyAuthError(error) {
   const code = error?.code || '';
-  if (code.includes('unauthorized-domain')) return 'Google sign-in is not enabled for jobs.nearwork.co yet. Add jobs.nearwork.co in Firebase Auth authorized domains.';
-  if (code.includes('operation-not-allowed')) return 'Google sign-in is not enabled in Firebase Authentication yet.';
-  if (code.includes('user-cancelled') || code.includes('cancelled-popup-request')) return 'Google sign-in was cancelled. Please try again.';
-  return 'Google sign-in did not complete. Please try again. (' + (code || error?.message || 'unknown error') + ')';
+  if (code.includes('wrong-password') || code.includes('invalid-credential')) return 'That password did not work. Please try again.';
+  if (code.includes('user-not-found')) return 'This email was not found. Please create an account to continue.';
+  return 'Something went wrong. Please try again. (' + (code || error?.message || 'unknown error') + ')';
 }
 
 // ── Load opening ──────────────────────────────────────────────────────────
@@ -817,27 +811,6 @@ async function init() {
   document.getElementById('page-loading').style.display  = 'none';
   document.getElementById('opening-view').style.display  = 'block';
   refreshLogoutButton();
-
-  // Process any pending Google redirect result. Fire-and-forget for new-user
-  // side-effects (welcome email, HubSpot); errors are stored and surfaced when
-  // the account step is shown (user is not signed in after a failed redirect).
-  getGoogleRedirectResult().then(rr => {
-    if (!rr?.isNewUser || !rr.user) return;
-    const marketingConsent = sessionStorage.getItem('nw_g_mkt') === '1';
-    sessionStorage.removeItem('nw_g_mkt');
-    const candidate = {
-      email: rr.user.email || '',
-      firstName: rr.user.displayName?.split(/\s+/)[0] || '',
-      lastName: rr.user.displayName?.split(/\s+/).slice(1).join(' ') || ''
-    };
-    sendCandidateAccountCreatedEmail(candidate).catch(() => null);
-    if (marketingConsent) {
-      syncCandidateToHubSpot({ email: candidate.email, name: rr.user.displayName || '', status: 'active', source: 'jobs.nearwork.co' }).catch(() => null);
-    }
-  }).catch(e => {
-    console.error('[NW] Google redirect result failed:', e?.code, e?.message);
-    window.__nwGoogleRedirectError = friendlyAuthError(e);
-  });
 
   // Candidates arrive here specifically to apply (via the "Apply now" button
   // on the job post). Jump straight into the apply flow — account gate or
@@ -1095,10 +1068,6 @@ window.showAccountStep = async function() {
     roleLabel.style.display = '';
     document.getElementById('account-heading').textContent = 'Apply for this role';
   }
-  if (window.__nwGoogleRedirectError) {
-    showAuthMessage('account-msg', window.__nwGoogleRedirectError);
-    window.__nwGoogleRedirectError = null;
-  }
   window.scrollTo({top:0,behavior:'smooth'});
 };
 
@@ -1287,7 +1256,7 @@ window.handleAccountContinue = async function() {
       msg.textContent = code.includes('wrong-password') || code.includes('invalid-credential')
         ? 'That password did not work. Please try again.'
         : code.includes('user-not-found')
-          ? 'This email was not found. If you signed up with Google, use Continue with Google.'
+          ? 'This email was not found. Please create an account to continue.'
           : 'Login failed. Please try again.';
       return;
     }
@@ -1305,32 +1274,6 @@ window.handleAccountContinue = async function() {
   }
 
   await createProfileAndContinue();
-};
-
-window.continueWithGoogle = async function() {
-  const msg = document.getElementById('account-msg');
-  msg.className = 'quick-msg show';
-  // Reveal consent block and require privacy acceptance before redirecting
-  document.getElementById('consent-block').style.display = '';
-  if (!document.getElementById('a-privacy')?.checked) {
-    showErr('err-a-privacy');
-    msg.textContent = 'Please accept the Privacy Policy to continue.';
-    document.getElementById('err-a-privacy').scrollIntoView({ behavior: 'smooth', block: 'center' });
-    return;
-  }
-  const marketingConsent = document.getElementById('a-marketing')?.checked === true;
-  // Persist consent across the redirect so we can act on it when we return
-  sessionStorage.setItem('nw_g_mkt', marketingConsent ? '1' : '0');
-  msg.textContent = 'Redirecting to Google…';
-  try {
-    await signInCandidateWithGoogle();
-    // Page navigates away — nothing below executes on success
-  } catch(e) {
-    console.error('[NW] Google sign-in failed', { code: e?.code, message: e?.message });
-    sessionStorage.removeItem('nw_g_mkt');
-    msg.innerHTML = '';
-    msg.textContent = friendlyAuthError(e);
-  }
 };
 
 async function createProfileAndContinue() {

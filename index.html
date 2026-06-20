@@ -170,6 +170,7 @@ input:focus,textarea:focus,select:focus{outline:none;}
 <script type="module">
 import {
   getPublishedOpenings, getCandidateByEmail, signInCandidate, signInCandidateWithGoogle,
+  getGoogleRedirectResult,
   getCandidateSession, saveCandidateSession, clearCandidateSession,
   waitForAuthReady, signOutCandidate, getCurrentUserProfile,
   createNewCandidateAccount, createCandidateProfile, isCandidatePortalUser,
@@ -177,6 +178,7 @@ import {
 } from './firebase-config.js';
 window.__NWfb = {
   getPublishedOpenings, getCandidateByEmail, signInCandidate, signInCandidateWithGoogle,
+  getGoogleRedirectResult,
   getCandidateSession, saveCandidateSession, clearCandidateSession,
   waitForAuthReady, signOutCandidate, getCurrentUserProfile,
   createNewCandidateAccount, createCandidateProfile, isCandidatePortalUser,
@@ -711,39 +713,13 @@ function AuthModal({ mode, onClose, onSuccess, onSwitchMode }) {
 
   const handleGoogle = async () => {
     const fb = await waitForFB();
-    setLoading(true); setOk('Opening Google sign-in…');
+    setLoading(true); setOk('Redirecting to Google…');
     try {
-      const user = await fb.signInCandidateWithGoogle();
-      // Portal role gate — Google sign-in can restore any existing Firebase session
-      const isCandidate = await fb.isCandidatePortalUser(user.uid);
-      if (!isCandidate) {
-        try { await fb.signOutCandidate(); } catch {}
-        setErr('This email is registered as a company or staff account. Please use app.nearwork.co to access the company portal.');
-        return;
-      }
-      let cand = null;
-      try { cand = user.email ? await fb.getCandidateByEmail(user.email) : null; } catch {}
-      const isNew = !cand;
-      if (isNew && user.uid && user.email) {
-        try {
-          cand = await fb.createCandidateProfile(user.uid, user.email, user.displayName||'');
-          fetch('https://admin.nearwork.co/api/sync-hubspot', {
-            method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ candidate:{email:cand.email,name:cand.name,code:cand.code,status:'active'}, event:'signup' })
-          }).catch(()=>{});
-        } catch(pe) { console.warn('profile creation skipped:', pe.message); }
-      }
-      const candidate = { ...(cand || { email: user.email||'', name: user.displayName||'' }), uid: user.uid };
-      fb.saveCandidateSession(candidate);
-      onSuccess(candidate);
+      await fb.signInCandidateWithGoogle();
+      // Page redirects away — code below never runs on success
     } catch(e) {
-      console.error('[NW] Google sign-in failed', {
-        code: e?.code,
-        message: e?.message,
-        serverResponse: e?.customData?.serverResponse
-      });
+      console.error('[NW] Google sign-in failed', { code: e?.code, message: e?.message });
       setErr(friendlyError(e));
-    } finally {
       setLoading(false);
     }
   };
@@ -846,6 +822,18 @@ function App() {
     (async () => {
       try {
         const fb = await waitForFB();
+        // Process any pending Google redirect before checking auth state.
+        // getGoogleRedirectResult() finalises the sign-in and returns {user, isNewUser}
+        // (or null if there was no redirect), allowing us to create the candidate
+        // profile for brand-new Google accounts before the rest of the page loads.
+        try {
+          const rr = await fb.getGoogleRedirectResult();
+          if (rr?.isNewUser && rr.user?.uid && rr.user?.email) {
+            await fb.createCandidateProfile(rr.user.uid, rr.user.email, rr.user.displayName || '').catch(e => console.warn('profile creation skipped:', e.message));
+          }
+        } catch(re) {
+          console.error('[NW] Google redirect result error:', re?.code, re?.message);
+        }
         // Auth check
         const firebaseUser = await fb.waitForAuthReady();
         if (alive && firebaseUser?.email) {

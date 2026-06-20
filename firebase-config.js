@@ -9,7 +9,8 @@ import {
 import {
   getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
   updateProfile, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence,
-  GoogleAuthProvider, signInWithRedirect, getRedirectResult, getAdditionalUserInfo, signInWithCustomToken
+  GoogleAuthProvider, signInWithRedirect, getRedirectResult, getAdditionalUserInfo,
+  browserPopupRedirectResolver, signInWithCustomToken
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
 const firebaseConfig = {
@@ -207,13 +208,14 @@ export async function signInCandidateWithGoogle() {
   await authPersistenceReady;
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
-  await signInWithRedirect(auth, provider);
+  await signInWithRedirect(auth, provider, browserPopupRedirectResolver);
   // Page navigates away — nothing below executes
 }
 
 export async function getGoogleRedirectResult() {
+  await authPersistenceReady;
   try {
-    const credential = await getRedirectResult(auth);
+    const credential = await getRedirectResult(auth, browserPopupRedirectResolver);
     if (!credential) return null;
     const isNewUser = getAdditionalUserInfo(credential)?.isNewUser === true;
     return { user: credential.user, isNewUser };

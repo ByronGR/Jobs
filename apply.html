@@ -1309,11 +1309,11 @@ async function createProfileAndContinue() {
   } catch(e) {
     const code = e.code || '';
     if (code.includes('email-already-in-use')) {
-      showLoginStepForCandidate({ email }, email, 'This email already has a Nearwork account. If you created it with Google, use Continue with Google. Otherwise enter your password.');
+      showLoginStepForCandidate({ email }, email, 'This email already has a Nearwork account. Enter your password to continue.');
       return;
     }
     if (code.includes('account-exists-with-different-credential')) {
-      showLoginStepForCandidate({ email }, email, 'This email already exists with a different sign-in method. Try Continue with Google or enter your password.');
+      showLoginStepForCandidate({ email }, email, 'This email already exists with a different sign-in method. Enter your password to continue.');
       return;
     }
     showErr('err-a-email');

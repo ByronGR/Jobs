@@ -1838,6 +1838,8 @@ async function sendConfirmationEmail(payload) {
 }
 
 window.goToDashboard = async function() {
+  const btn = document.querySelector('.btn-talent');
+  if (btn) { btn.textContent = 'Opening dashboard…'; btn.disabled = true; }
   try {
     const user = await clientTimeout(waitForAuthReady(), 3000, null, 'auth for dashboard');
     if (user) {
@@ -1853,8 +1855,13 @@ window.goToDashboard = async function() {
           return;
         }
       }
+      console.error('[NW] auth-handoff failed:', r.status, await r.text().catch(() => ''));
+    } else {
+      console.error('[NW] goToDashboard: no authenticated user');
     }
-  } catch(e) { /* fall through */ }
+  } catch(e) {
+    console.error('[NW] goToDashboard error:', e?.message);
+  }
   window.location.href = 'https://talent.nearwork.co';
 };
 

@@ -1844,7 +1844,7 @@ window.goToDashboard = async function() {
     const user = await clientTimeout(waitForAuthReady(), 3000, null, 'auth for dashboard');
     if (user) {
       const idToken = await user.getIdToken();
-      const r = await fetch('https://talent.nearwork.co/api/auth-handoff', {
+      const r = await fetch('/api/auth-handoff', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + idToken, 'Content-Type': 'application/json' }
       });

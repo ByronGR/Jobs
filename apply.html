@@ -1297,7 +1297,7 @@ async function createProfileAndContinue() {
       document.getElementById('a-password').value,
       [candidate.firstName, candidate.lastName].filter(Boolean).join(' ')
     );
-    sendCandidateAccountCreatedEmail(candidate).catch(() => null);
+    await sendCandidateAccountCreatedEmail(candidate).catch((e) => console.error('[NW] account email failed:', e?.message));
     if (marketingConsent) {
       syncCandidateToHubSpot({
         email: candidate.email,

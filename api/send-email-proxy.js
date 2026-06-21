@@ -33,8 +33,12 @@ export default async function handler(req, res) {
       body: JSON.stringify({ to, templateId, data: data || {} })
     });
     const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      console.error(`[send-email-proxy] Admin returned ${response.status} for ${templateId} to ${to}:`, result);
+    }
     return res.status(response.status).json(result);
   } catch (e) {
+    console.error(`[send-email-proxy] Failed to reach Admin for ${templateId} to ${to}:`, e.message);
     return res.status(502).json({ ok: false, error: e.message || 'Failed to reach email service' });
   }
 }

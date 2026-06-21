@@ -21,7 +21,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Valid recipient email is required' });
   }
 
-  const from = process.env.RESEND_FROM || 'Nearwork <support@nearwork.co>';
+  const from = process.env.RESEND_FROM || 'Nearwork <noreply@nearwork.co>';
   const subject = `We received your application for ${openingTitle}`;
   const safeName = escapeHtml(candidateName || 'there');
   const safeTitle = escapeHtml(openingTitle || 'this role');

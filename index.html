@@ -626,6 +626,8 @@ function AuthModal({ mode, onClose, onSuccess, onSwitchMode }) {
   const [confirm, setConfirm] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [privacyConsent, setPrivacyConsent] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
   const [step, setStep] = useState('email'); // 'email' | 'password' (login flow)
   const [msg, setMsg] = useState('');
   const [isError, setIsError] = useState(false);
@@ -666,14 +668,24 @@ function AuthModal({ mode, onClose, onSuccess, onSwitchMode }) {
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setErr('Enter a valid email.'); return; }
         if (password.length < 8) { setErr('Password must be at least 8 characters.'); return; }
         if (password !== confirm) { setErr('Passwords do not match.'); return; }
+        if (!privacyConsent) { setErr('Please accept the Privacy Policy to continue.'); return; }
         setOk('Creating your account…');
-        const { user, candCode, profile } = await fb.createNewCandidateAccount(email, password, name.trim());
+        const consentAt = new Date().toISOString();
+        const consentData = { privacyConsent: true, privacyConsentAt: consentAt, marketingConsent, marketingConsentAt: marketingConsent ? consentAt : null };
+        const { user, candCode, profile } = await fb.createNewCandidateAccount(email, password, name.trim(), consentData);
         const candidate = { ...profile, id: user.uid };
         fb.saveCandidateSession(candidate);
-        fetch('https://admin.nearwork.co/api/sync-hubspot', {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ candidate:{email:profile.email,name:profile.name,code:candCode,status:'active'}, event:'signup' })
-        }).catch(()=>{});
+        const firstName = name.trim().split(/\s+/)[0] || 'there';
+        await fetch('/api/send-email-proxy', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to: email.trim().toLowerCase(), templateId: 'account_created', data: { name: name.trim(), firstName, actionUrl: 'https://talent.nearwork.co' } })
+        }).catch((e) => console.error('[NW] account email failed:', e?.message));
+        if (marketingConsent) {
+          fetch('https://admin.nearwork.co/api/sync-hubspot', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ candidate:{email:profile.email,name:profile.name,code:candCode,status:'active'}, event:'signup' })
+          }).catch(()=>{});
+        }
         onSuccess(candidate);
       } else {
         // Login
@@ -738,6 +750,18 @@ function AuthModal({ mode, onClose, onSuccess, onSwitchMode }) {
           <div className="nw-modal-field nw-pw-field">
             <input type={showConfirm?'text':'password'} placeholder="Confirm password" value={confirm} onChange={e=>setConfirm(e.target.value)} onKeyDown={handleKey} autoComplete="new-password" />
             <button type="button" className="nw-pw-toggle" aria-label={showConfirm?'Hide password':'Show password'} onClick={()=>setShowConfirm(v=>!v)}><Icon name={showConfirm?'eye-off':'eye'} size={16} color="var(--muted2)" /></button>
+          </div>
+        )}
+        {isSignup && (
+          <div style={{ marginTop:4, marginBottom:8 }}>
+            <label style={{ display:'flex', alignItems:'flex-start', gap:9, cursor:'pointer', fontSize:12, color:'var(--ink)', lineHeight:1.5, marginBottom:6 }}>
+              <input type="checkbox" checked={privacyConsent} onChange={e=>setPrivacyConsent(e.target.checked)} style={{ marginTop:3, flexShrink:0, accentColor:'var(--accent)' }} />
+              <span>I have read and agree to Nearwork's <a href="https://www.nearwork.co/privacy-policy" target="_blank" rel="noopener" style={{ color:'var(--accent)', textDecoration:'underline' }}>Privacy Policy</a>, <a href="https://www.nearwork.co/terms-of-service" target="_blank" rel="noopener" style={{ color:'var(--accent)', textDecoration:'underline' }}>Terms of Service</a> and <a href="https://www.nearwork.co/cookie-policy" target="_blank" rel="noopener" style={{ color:'var(--accent)', textDecoration:'underline' }}>Cookie Policy</a> <span style={{ color:'var(--red)' }}>*</span></span>
+            </label>
+            <label style={{ display:'flex', alignItems:'flex-start', gap:9, cursor:'pointer', fontSize:12, color:'var(--muted)', lineHeight:1.5 }}>
+              <input type="checkbox" checked={marketingConsent} onChange={e=>setMarketingConsent(e.target.checked)} style={{ marginTop:3, flexShrink:0, accentColor:'var(--accent)' }} />
+              <span>I agree to receive future job opportunities and updates from Nearwork (optional)</span>
+            </label>
           </div>
         )}
         <button className="nw-btn nw-btn-primary" style={{ width:'100%', padding:13, fontSize:14, borderRadius:99 }} onClick={handleSubmit} disabled={loading}>

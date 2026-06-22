@@ -257,6 +257,7 @@ export default async function handler(req, res) {
         cvUrl: appData.cvUrl || null,
         skills: Array.isArray(appData.skills) ? appData.skills : [],
         experience: Array.isArray(appData.experience) ? appData.experience : [],
+        workHistory: Array.isArray(appData.experience) ? appData.experience : [],
         languages: Array.isArray(appData.languages) ? appData.languages : [],
         certifications: Array.isArray(appData.certifications) ? appData.certifications : [],
         applications: nextApplications,
@@ -266,7 +267,21 @@ export default async function handler(req, res) {
         authUid: ownerUid,
         lastAppliedOpeningCode: openingCode,
         lastAppliedAt: now,
-        updatedAt: now
+        updatedAt: now,
+        onboarded: true,
+        targetRole: appData.currentRole || existingUser.targetRole || '',
+        salaryAmount: expectedSalaryUSD || expectedSalaryCOP || expectedSalaryAmount || null,
+        whatsapp: appData.phone || existingUser.whatsapp || '',
+        ...(appData.cvUrl ? {
+          activeCvName: appData.cvFileName || 'Resume',
+          activeCvId: appData.cvUrl,
+          cvLibrary: admin.firestore.FieldValue.arrayUnion({
+            id: appData.cvUrl,
+            name: appData.cvFileName || 'Resume',
+            url: appData.cvUrl,
+            uploadedAt: new Date().toISOString()
+          })
+        } : {})
       };
       if (!existingUser.createdAt) userProfile.createdAt = now;
       await userRef.set(userProfile, { merge: true });

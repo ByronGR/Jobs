@@ -953,9 +953,17 @@ function App() {
 
   const handleAuthSuccess = (candidate) => {
     setUser(candidate);
-    // candidate.uid is set for email-login; candidate.id is the Firebase UID for signup
     const uid = candidate?.uid || candidate?.id;
     if (uid) setApplied(getAppliedSet(uid));
+    if (uid && window.Intercom) {
+      fetch('/api/intercom-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: uid, email: candidate?.email })
+      }).then(r => r.ok ? r.json() : null).then(data => {
+        if (data?.token) window.Intercom('boot', { api_base: 'https://api-iam.intercom.io', app_id: 'pelltlav', intercom_user_jwt: data.token, user_id: uid, name: candidate?.name || '', email: candidate?.email || '', session_duration: 86400000 });
+      }).catch(() => {});
+    }
     setShowAuth(false);
     // If they were trying to apply for a role, send them straight back to it
     // so creating an account doesn't derail the application.

@@ -65,17 +65,6 @@ export default async function handler(req, res) {
     return res.status(405).json({ ok: false, error: 'Method not allowed' });
   }
 
-  const authHeader = String(req.headers?.authorization || '').trim();
-  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
-  if (!idToken) return res.status(401).json({ ok: false, error: 'Authentication required' });
-
-  initAdmin();
-  try {
-    await admin.auth().verifyIdToken(idToken);
-  } catch {
-    return res.status(401).json({ ok: false, error: 'Invalid or expired session' });
-  }
-
   const token = process.env.HUBSPOT_ACCESS_TOKEN;
   if (!token) {
     return res.status(500).json({ ok: false, error: 'HUBSPOT_ACCESS_TOKEN is not configured' });

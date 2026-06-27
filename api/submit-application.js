@@ -342,19 +342,6 @@ export default async function handler(req, res) {
       detail: `${existingCandidate ? 'Updated' : 'New candidate'} — applied to ${openingCode}`
     }).catch(() => null);
 
-    const hubspotResult = await syncCandidateToHubSpot({
-      code: candidateCode,
-      name: applicationPayload.candidateName,
-      email,
-      phone: appData.phone || '',
-      role: applicationPayload.openingTitle || openingCode,
-      location: appData.city || '',
-      status: 'applied',
-      source: 'jobs.nearwork.co',
-      openingCode,
-      profileUrl: `https://talent.nearwork.co/profile`
-    }).catch(error => ({ ok: false, skipped: true, error: error.message }));
-
     const emailResult = await sendResendEmail({
       to: email,
       candidateName: applicationPayload.candidateName,
@@ -368,77 +355,12 @@ export default async function handler(req, res) {
       candCode: candidateCode,
       candId: candidateId,
       appId,
-      email: emailResult,
-      hubspot: hubspotResult
+      email: emailResult
     });
   } catch (error) {
     console.error('submit-application error:', error);
     return res.status(500).json({ error: 'Application submit failed' });
   }
-}
-
-async function syncCandidateToHubSpot(candidate) {
-  const token = process.env.HUBSPOT_ACCESS_TOKEN;
-  if (!token || !candidate?.email) return { ok: false, skipped: true, reason: 'HubSpot not configured' };
-  const properties = compactProperties({
-    email: candidate.email,
-    firstname: String(candidate.name || '').trim().split(/\s+/)[0] || '',
-    lastname: String(candidate.name || '').trim().split(/\s+/).slice(1).join(' '),
-    phone: candidate.phone,
-    city: candidate.location,
-    jobtitle: candidate.role,
-    company: 'Nearwork Candidate',
-    website: candidate.profileUrl,
-    type: 'Candidate',
-    nearwork_contact_type: 'candidate',
-    nearwork_portal_type: 'talent',
-    nearwork_candidate_code: candidate.code,
-    nearwork_candidate_status: candidate.status,
-    lifecyclestage: 'lead'
-  });
-  let hubspot = await upsertHubspotContact(token, candidate.email, properties);
-  if (!hubspot.response.ok && isUnknownHubspotProperty(hubspot.body)) {
-    const fallback = { ...properties };
-    delete fallback.nearwork_contact_type;
-    delete fallback.nearwork_portal_type;
-    delete fallback.nearwork_candidate_code;
-    delete fallback.nearwork_candidate_status;
-    hubspot = await upsertHubspotContact(token, candidate.email, fallback);
-    hubspot.body.nearworkPropertiesSkipped = true;
-  }
-  return {
-    ok: hubspot.response.ok,
-    id: hubspot.body.id,
-    skippedCustomProperties: !!hubspot.body.nearworkPropertiesSkipped,
-    error: hubspot.response.ok ? null : (hubspot.body.message || 'HubSpot sync failed')
-  };
-}
-
-async function upsertHubspotContact(token, email, properties) {
-  let response = await fetch('https://api.hubapi.com/crm/v3/objects/contacts/' + encodeURIComponent(email) + '?idProperty=email', {
-    method: 'PATCH',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ properties })
-  });
-  let body = await response.json().catch(() => ({}));
-  if (response.status === 404) {
-    response = await fetch('https://api.hubapi.com/crm/v3/objects/contacts', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ properties })
-    });
-    body = await response.json().catch(() => ({}));
-  }
-  return { response, body };
-}
-
-function compactProperties(properties) {
-  return Object.fromEntries(Object.entries(properties).filter(([, value]) => value !== undefined && value !== null && String(value).trim() !== ''));
-}
-
-function isUnknownHubspotProperty(body = {}) {
-  const msg = String(body.message || '').toLowerCase();
-  return msg.includes('property') && (msg.includes('does not exist') || msg.includes('unknown'));
 }
 
 function makeCandidateCode() {

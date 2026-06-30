@@ -438,10 +438,12 @@ input:focus,textarea:focus,select:focus{outline:none;}
           <div class="field"><label>Expected salary — COP</label><input type="number" id="f-expected-salary-cop" min="0" step="100000" placeholder="10000000"></div>
         </div>
         <div class="ferr" id="err-expected-salary" style="margin:-10px 0 16px;">Please enter an expected salary in USD, COP, or both</div>
-        <div class="field-row">
+        <div class="field"><label>Country <span class="req">*</span></label><select id="f-country" onchange="onCountryChange()"></select></div>
+        <div class="field-row" id="f-co-loc">
           <div class="field"><label>Department <span class="req">*</span></label><select id="f-department" onchange="onDepartmentChange()"></select></div>
           <div class="field"><label>City <span class="req">*</span></label><select id="f-city"></select></div>
         </div>
+        <div class="field" id="f-co-hint" style="display:none;"><div class="fhint">No state or city needed — country is enough to continue.</div></div>
         <div class="field"><label>English level</label><select id="f-english"><option value="">Select level</option><option value="B1">B1</option><option value="B2">B2</option><option value="C1">C1</option><option value="C2">C2</option><option value="Native">Native</option></select></div>
         <div class="field"><label>LinkedIn profile (optional)</label><input type="url" id="f-linkedin" placeholder="https://linkedin.com/in/your-name"></div>
         <div class="form-nav"><button class="btn-back" onclick="goStep(1)">← Back</button><div style="display:flex;align-items:center;gap:10px;"><div class="step-info">Step 2 of 3</div><button class="btn-next" onclick="goStep(3)">Continue →</button></div></div>
@@ -611,6 +613,21 @@ function canonicalSkillName(value) {
     : part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()).join(' ');
 }
 
+const COUNTRIES = ["Colombia",
+  "Afghanistan","Albania","Algeria","Andorra","Angola","Antigua and Barbuda","Argentina","Armenia","Australia","Austria","Azerbaijan",
+  "Bahamas","Bahrain","Bangladesh","Barbados","Belarus","Belgium","Belize","Benin","Bhutan","Bolivia","Bosnia and Herzegovina","Botswana","Brazil","Brunei","Bulgaria","Burkina Faso","Burundi",
+  "Cambodia","Cameroon","Canada","Cape Verde","Central African Republic","Chad","Chile","China","Comoros","Congo (Brazzaville)","Congo (Kinshasa)","Costa Rica","Côte d'Ivoire","Croatia","Cuba","Cyprus","Czechia",
+  "Denmark","Djibouti","Dominica","Dominican Republic","Ecuador","Egypt","El Salvador","Equatorial Guinea","Eritrea","Estonia","Eswatini","Ethiopia",
+  "Fiji","Finland","France","Gabon","Gambia","Georgia","Germany","Ghana","Greece","Grenada","Guatemala","Guinea","Guinea-Bissau","Guyana",
+  "Haiti","Honduras","Hungary","Iceland","India","Indonesia","Iran","Iraq","Ireland","Israel","Italy","Jamaica","Japan","Jordan",
+  "Kazakhstan","Kenya","Kiribati","Kosovo","Kuwait","Kyrgyzstan","Laos","Latvia","Lebanon","Lesotho","Liberia","Libya","Liechtenstein","Lithuania","Luxembourg",
+  "Madagascar","Malawi","Malaysia","Maldives","Mali","Malta","Marshall Islands","Mauritania","Mauritius","Mexico","Micronesia","Moldova","Monaco","Mongolia","Montenegro","Morocco","Mozambique","Myanmar",
+  "Namibia","Nauru","Nepal","Netherlands","New Zealand","Nicaragua","Niger","Nigeria","North Korea","North Macedonia","Norway","Oman",
+  "Pakistan","Palau","Palestine","Panama","Papua New Guinea","Paraguay","Peru","Philippines","Poland","Portugal","Qatar",
+  "Romania","Russia","Rwanda","Saint Kitts and Nevis","Saint Lucia","Saint Vincent and the Grenadines","Samoa","San Marino","Sao Tome and Principe","Saudi Arabia","Senegal","Serbia","Seychelles","Sierra Leone","Singapore","Slovakia","Slovenia","Solomon Islands","Somalia","South Africa","South Korea","South Sudan","Spain","Sri Lanka","Sudan","Suriname","Sweden","Switzerland","Syria",
+  "Taiwan","Tajikistan","Tanzania","Thailand","Timor-Leste","Togo","Tonga","Trinidad and Tobago","Tunisia","Turkey","Turkmenistan","Tuvalu",
+  "Uganda","Ukraine","United Arab Emirates","United Kingdom","United States","Uruguay","Uzbekistan","Vanuatu","Vatican City","Venezuela","Vietnam","Yemen","Zambia","Zimbabwe"];
+
 const colombiaLocations = {
   "Amazonas": ["El Encanto", "La Chorrera", "La Pedrera", "La Victoria", "Leticia", "Miriti - Paraná", "Puerto Alegría", "Puerto Arica", "Puerto Nariño", "Puerto Santander", "Tarapacá"],
   "Antioquia": ["Abejorral", "Abriaquí", "Alejandría", "Amagá", "Amalfi", "Andes", "Angelópolis", "Angostura", "Anorí", "Anza", "Apartadó", "Arboletes", "Argelia", "Armenia", "Barbosa", "Bello", "Belmira", "Betania", "Betulia", "Briceño", "Buriticá", "Cáceres", "Caicedo", "Caldas", "Campamento", "Cañasgordas", "Caracolí", "Caramanta", "Carepa", "Carmen de Viboral", "Carolina", "Caucasia", "Chigorodó", "Cisneros", "Ciudad Bolívar", "Cocorná", "Concepción", "Concordia", "Copacabana", "Dabeiba", "Don Matías", "Ebéjico", "El Bagre", "Entrerríos", "Envigado", "Fredonia", "Frontino", "Giraldo", "Girardota", "Gómez Plata", "Granada", "Guadalupe", "Guarne", "Guatapé", "Heliconia", "Hispania", "Itagüí", "Ituango", "Jardín", "Jericó", "La Ceja", "La Estrella", "La Pintada", "La Unión", "Liborina", "Maceo", "Marinilla", "Medellín", "Montebello", "Murindó", "Mutata", "Nariño", "Nechí", "Necoclí", "Olaya", "Peñol", "Peque", "Pueblorrico", "Puerto Berrío", "Puerto Nare", "Puerto Triunfo", "Remedios", "Retiro", "Rionegro", "Sabanalarga", "Sabaneta", "Salgar", "San Andrés", "San Carlos", "San Francisco", "San Jerónimo", "San José de la Montaña", "San Juan de Urabá", "San Luis", "San Pedro", "San Pedro de Urabá", "San Rafael", "San Roque", "San Vicente", "Santa Bárbara", "Santa Rosa de Osos", "Santafé de Antioquia", "Santo Domingo", "Santuario", "Segovia", "Sonsón", "Sopetrán", "Támesis", "Tarazá", "Tarso", "Titiribí", "Toledo", "Turbo", "Uramita", "Urrao", "Valdivia", "Valparaíso", "Vegachí", "Venecia", "Vigía del Fuerte", "Yalí", "Yarumal", "Yolombó", "Yondó", "Zaragoza"],
@@ -664,6 +681,26 @@ window.onDepartmentChange = function() {
   const cities = colombiaLocations[document.getElementById('f-department').value] || [];
   citySel.innerHTML = cities.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
 };
+
+function populateCountrySelect(selectedCountry) {
+  const sel = document.getElementById('f-country');
+  if (!sel) return;
+  const country = COUNTRIES.includes(selectedCountry) ? selectedCountry : 'Colombia';
+  sel.innerHTML = COUNTRIES.map(c => `<option value="${escapeHtml(c)}" ${c === country ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('');
+  applyCountryVisibility();
+}
+
+// Colombia keeps department + city; any other country needs only the country.
+function applyCountryVisibility() {
+  const sel = document.getElementById('f-country');
+  const isCo = !sel || sel.value === 'Colombia';
+  const loc  = document.getElementById('f-co-loc');
+  const hint = document.getElementById('f-co-hint');
+  if (loc)  loc.style.display  = isCo ? '' : 'none';
+  if (hint) hint.style.display = isCo ? 'none' : '';
+}
+
+window.onCountryChange = applyCountryVisibility;
 
 function stripAccents(s) {
   return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -807,6 +844,7 @@ async function init() {
   renderExperienceList();
   renderLanguagesList();
   renderCertificationsList();
+  populateCountrySelect();
   populateLocationSelects();
 
   document.getElementById('page-loading').style.display  = 'none';
@@ -1130,6 +1168,7 @@ function prefillCandidate(candidate) {
   const legacyCurrency = candidate.expectedSalaryCurrency || candidate.salaryCurrency || 'USD';
   setField('f-expected-salary-usd', candidate.expectedSalaryUSD || (legacyCurrency === 'USD' ? legacyAmount : undefined));
   setField('f-expected-salary-cop', candidate.expectedSalaryCOP || (legacyCurrency === 'COP' ? legacyAmount : undefined));
+  populateCountrySelect(candidate.locationCountry || candidate.country);
   populateLocationSelects(candidate.locationDepartment, candidate.locationCity || candidate.city);
   setField('f-english', candidate.englishLevel || candidate.english);
   setField('f-linkedin', candidate.linkedin);
@@ -1972,10 +2011,21 @@ window.submitApp = async function() {
     currentRole: document.getElementById('f-current-role').value.trim(),
     expectedSalaryUSD: Number(document.getElementById('f-expected-salary-usd').value || 0) || null,
     expectedSalaryCOP: Number(document.getElementById('f-expected-salary-cop').value || 0) || null,
-    department: document.getElementById('f-department').value,
-    city:       document.getElementById('f-city').value,
-    location:   [document.getElementById('f-city').value, document.getElementById('f-department').value].filter(Boolean).join(', '),
-    locationId: `${stripAccents(document.getElementById('f-city').value).replace(/[^a-z0-9]+/g, '-')}-co`,
+    ...(function(){
+      const country = document.getElementById('f-country').value || 'Colombia';
+      const isCo = country === 'Colombia';
+      const dept = isCo ? document.getElementById('f-department').value : '';
+      const city = isCo ? document.getElementById('f-city').value : '';
+      const countrySlug = stripAccents(country).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      return {
+        country,
+        locationCountry: country,
+        department: dept,
+        city,
+        location:   isCo ? [city, dept].filter(Boolean).join(', ') : country,
+        locationId: isCo ? `${stripAccents(city).replace(/[^a-z0-9]+/g, '-')}-co` : countrySlug,
+      };
+    })(),
     english:    document.getElementById('f-english').value,
     linkedin:   document.getElementById('f-linkedin').value.trim(),
     cvUrl,

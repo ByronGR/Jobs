@@ -434,8 +434,8 @@ input:focus,textarea:focus,select:focus{outline:none;}
         </div>
         <div class="field"><label>Current role <span class="req">*</span></label><input type="text" id="f-current-role" placeholder="e.g. Customer Success Manager"><div class="ferr" id="err-current-role">Required</div><div class="fhint">The name of your current (or most recent) position.</div></div>
         <div class="field-row">
-          <div class="field"><label>Expected salary — USD</label><input type="number" id="f-expected-salary-usd" min="0" step="100" placeholder="2500"></div>
-          <div class="field"><label>Expected salary — COP</label><input type="number" id="f-expected-salary-cop" min="0" step="100000" placeholder="10000000"></div>
+          <div class="field"><label>Expected salary — USD</label><input type="text" inputmode="numeric" id="f-expected-salary-usd" oninput="formatSalaryInput(this)" placeholder="2,500"></div>
+          <div class="field"><label>Expected salary — COP</label><input type="text" inputmode="numeric" id="f-expected-salary-cop" oninput="formatSalaryInput(this)" placeholder="10,000,000"></div>
         </div>
         <div class="ferr" id="err-expected-salary" style="margin:-10px 0 16px;">Please enter an expected salary in USD, COP, or both</div>
         <div class="field"><label>Country <span class="req">*</span></label><select id="f-country" onchange="onCountryChange()"></select></div>
@@ -681,6 +681,53 @@ window.onDepartmentChange = function() {
   const cities = colombiaLocations[document.getElementById('f-department').value] || [];
   citySel.innerHTML = cities.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
 };
+
+// Thousands separators in a salary input as the user types (keeps digits only).
+function formatSalaryInput(el) {
+  const digits = String(el.value || '').replace(/[^\d]/g, '');
+  el.value = digits ? Number(digits).toLocaleString('en-US') : '';
+}
+function salaryNumber(id) {
+  const digits = String(document.getElementById(id)?.value || '').replace(/[^\d]/g, '');
+  return digits ? Number(digits) : null;
+}
+// Fix ALL-CAPS names → Title case (e.g. "SEBASTIAN" → "Sebastian"); leaves
+// already mixed-case words like "McDonald" / "José" untouched.
+function properName(s) {
+  return String(s || '').replace(/\S+/g, (w) =>
+    /[A-Za-zÀ-ÿ]/.test(w) && w === w.toUpperCase()
+      ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
+      : w
+  );
+}
+// Lightweight self-contained confetti burst (no external library → CSP-safe).
+function launchConfetti() {
+  try {
+    const cvs = document.createElement('canvas');
+    cvs.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:99999';
+    document.body.appendChild(cvs);
+    const ctx = cvs.getContext('2d');
+    const W = cvs.width = window.innerWidth, H = cvs.height = window.innerHeight;
+    const colors = ['#16A085', '#E74C7C', '#EAB308', '#3B82F6', '#AF7AC5'];
+    const bits = Array.from({ length: 150 }, () => ({
+      x: Math.random() * W, y: -20 - Math.random() * H * 0.4,
+      r: 4 + Math.random() * 6, c: colors[(Math.random() * colors.length) | 0],
+      vy: 2 + Math.random() * 4, vx: -2 + Math.random() * 4,
+      rot: Math.random() * 6.28, vr: -0.2 + Math.random() * 0.4,
+    }));
+    let frame = 0;
+    (function draw() {
+      frame++;
+      ctx.clearRect(0, 0, W, H);
+      bits.forEach((p) => {
+        p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+        ctx.fillStyle = p.c; ctx.fillRect(-p.r / 2, -p.r / 2, p.r, p.r * 0.6); ctx.restore();
+      });
+      if (frame < 240) requestAnimationFrame(draw); else cvs.remove();
+    })();
+  } catch (e) { /* confetti is decorative — never block the flow */ }
+}
 
 function populateCountrySelect(selectedCountry) {
   const sel = document.getElementById('f-country');
@@ -1168,6 +1215,8 @@ function prefillCandidate(candidate) {
   const legacyCurrency = candidate.expectedSalaryCurrency || candidate.salaryCurrency || 'USD';
   setField('f-expected-salary-usd', candidate.expectedSalaryUSD || (legacyCurrency === 'USD' ? legacyAmount : undefined));
   setField('f-expected-salary-cop', candidate.expectedSalaryCOP || (legacyCurrency === 'COP' ? legacyAmount : undefined));
+  formatSalaryInput(document.getElementById('f-expected-salary-usd'));
+  formatSalaryInput(document.getElementById('f-expected-salary-cop'));
   populateCountrySelect(candidate.locationCountry || candidate.country);
   populateLocationSelects(candidate.locationDepartment, candidate.locationCity || candidate.city);
   setField('f-english', candidate.englishLevel || candidate.english);
@@ -1729,8 +1778,8 @@ function validateStep(step) {
     const last  = document.getElementById('f-last').value.trim();
     const phone = document.getElementById('f-phone').value.trim();
     const role  = document.getElementById('f-current-role').value.trim();
-    const usd = Number(document.getElementById('f-expected-salary-usd').value || 0);
-    const cop = Number(document.getElementById('f-expected-salary-cop').value || 0);
+    const usd = salaryNumber('f-expected-salary-usd') || 0;
+    const cop = salaryNumber('f-expected-salary-cop') || 0;
     if (!first) { showErr('err-first'); ok=false; } else clearErr('err-first');
     if (!last)  { showErr('err-last');  ok=false; } else clearErr('err-last');
     if (!phone) { showErr('err-phone'); ok=false; } else clearErr('err-phone');
@@ -2005,12 +2054,12 @@ window.submitApp = async function() {
     candidateId: activeCandidate?.candidateCode || activeCandidate?.code || activeCandidate?.candidateId || '',
     candidateCode: activeCandidate?.candidateCode || activeCandidate?.code || '',
     email,
-    firstName:  document.getElementById('f-first').value.trim(),
-    lastName:   document.getElementById('f-last').value.trim(),
+    firstName:  properName(document.getElementById('f-first').value.trim()),
+    lastName:   properName(document.getElementById('f-last').value.trim()),
     phone:      document.getElementById('f-phone').value.trim(),
     currentRole: document.getElementById('f-current-role').value.trim(),
-    expectedSalaryUSD: Number(document.getElementById('f-expected-salary-usd').value || 0) || null,
-    expectedSalaryCOP: Number(document.getElementById('f-expected-salary-cop').value || 0) || null,
+    expectedSalaryUSD: salaryNumber('f-expected-salary-usd'),
+    expectedSalaryCOP: salaryNumber('f-expected-salary-cop'),
     ...(function(){
       const country = document.getElementById('f-country').value || 'Colombia';
       const isCo = country === 'Colombia';
@@ -2051,6 +2100,7 @@ window.submitApp = async function() {
     document.getElementById('success-ref').textContent = 'Reference: ' + CODE + ' · ' + candCode;
     document.getElementById('app-form').style.display = 'none';
     document.getElementById('success-screen').classList.add('show');
+    launchConfetti();
     window.scrollTo({top:0,behavior:'smooth'});
     try {
       const _uid = currentUser?.uid;

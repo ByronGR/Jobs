@@ -687,6 +687,9 @@ function formatSalaryInput(el) {
   const digits = String(el.value || '').replace(/[^\d]/g, '');
   el.value = digits ? Number(digits).toLocaleString('en-US') : '';
 }
+// This script is a module, so inline oninput="formatSalaryInput(...)" can only
+// reach it via window (same pattern as window.onCountryChange below).
+window.formatSalaryInput = formatSalaryInput;
 function salaryNumber(id) {
   const digits = String(document.getElementById(id)?.value || '').replace(/[^\d]/g, '');
   return digits ? Number(digits) : null;
